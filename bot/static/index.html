@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Delta / Automation</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Delta automation home"
+        ><span class="brand-icon">↗</span> delta<span class="brand-dot">/</span
+        ><span class="brand-sub">studio</span></a
+      >
+      <nav aria-label="Main navigation">
+        <button class="nav-active" id="overview-tab">Automation</button
+        ><button id="strategy-tab">Strategy settings</button
+        ><button id="activity-tab">Activity</button>
+      </nav>
+      <button class="connection-pill" id="connection-button">
+        <span class="dot"></span> Demo environment <span class="avatar">D</span>
+      </button>
+    </header>
+    <main>
+      <div class="page-heading">
+        <div>
+          <div class="eyebrow">YOUR TRADING WORKSPACE</div>
+          <h1>Automation overview<span class="title-dot">.</span></h1>
+          <p>A clear strategy. A stop that moves with you.</p>
+        </div>
+        <div class="heading-actions">
+          <button
+            class="icon-button"
+            id="settings-button"
+            aria-label="Open settings"
+          >
+            ⚙</button
+          ><button class="secondary" id="stop-button" disabled>Pause</button
+          ><button class="primary" id="start-button">
+            <span>▶</span> Start paper run
+          </button>
+        </div>
+      </div>
+      <div id="notice" class="notice" role="status" aria-live="polite">
+        Paper mode uses Delta demo market data. No exchange orders are sent.
+      </div>
+      <section class="stats" aria-label="Runner metrics">
+        <article>
+          <span>Automation status</span
+          ><strong id="status-value"
+            >Ready <small class="pill muted">IDLE</small></strong
+          >
+          <p id="status-sub">Waiting for you to start</p>
+        </article>
+        <article>
+          <span>Market price <small id="symbol-label">BTCUSD</small></span
+          ><strong id="price-value">—</strong>
+          <p id="price-sub">Demo market feed</p>
+        </article>
+        <article>
+          <span>Realized estimate <small id="mode-label">PAPER</small></span
+          ><strong id="pnl-value">—</strong>
+          <p>Bot fills only · quote currency</p>
+        </article>
+        <article>
+          <span>Open position</span><strong id="position-value">Flat</strong>
+          <p id="position-sub">No active trade</p>
+        </article>
+        <article>
+          <span>Current stop loss</span><strong id="stop-value">—</strong>
+          <p id="stop-sub">Moves after each target</p>
+        </article>
+      </section>
+      <section class="workspace" aria-label="Strategy workspace">
+        <div class="workspace-top">
+          <div class="market-tab">
+            <span class="coin">₿</span><strong id="market-symbol">BTCUSD</strong
+            ><span class="divider"></span><span id="timeframe-label">5m</span
+            ><span class="demo-label">DELTA DEMO</span>
+          </div>
+          <span class="feed-label" id="feed-status"
+            ><span class="dot gray"></span> Awaiting market data</span
+          >
+        </div>
+        <div class="workspace-body">
+          <section class="chart-panel" aria-label="Price chart">
+            <div class="panel-heading">
+              <div>
+                <h2>Price action</h2>
+                <span id="chart-caption"
+                  >Closed candles · entries after candle close</span
+                >
+              </div>
+              <button
+                class="tiny-button"
+                id="chart-settings"
+                aria-label="Change chart settings"
+              >
+                •••
+              </button>
+            </div>
+            <div class="chart-wrap">
+              <svg
+                id="chart"
+                viewBox="0 0 700 430"
+                role="img"
+                aria-label="Candlestick chart of demo market data"
+              ></svg>
+              <div class="chart-empty" id="chart-empty">
+                <div class="empty-icon">⌁</div>
+                <h3>Your market, in focus.</h3>
+                <p>
+                  Start a paper run to load demo candles.<br />No API key needed
+                  for public market data.
+                </p>
+              </div>
+            </div>
+            <div class="chart-footer">
+              <span><i class="legend-dot green"></i> Bullish candle</span
+              ><span><i class="legend-dot red"></i> Bearish candle</span
+              ><span id="last-candle">No candles yet</span>
+            </div>
+          </section>
+          <section class="flow-panel" aria-label="Strategy flow">
+            <div class="panel-heading">
+              <div>
+                <h2>Strategy canvas</h2>
+                <span>Rules in. Decisions out.</span>
+              </div>
+              <span class="pill neutral">CANDLE CLOSE</span>
+            </div>
+            <div class="flow-canvas">
+              <div class="flow-row">
+                <div class="node trigger">
+                  <span class="node-icon orange">↳</span>
+                  <div>
+                    <strong>Start trigger</strong
+                    ><small id="flow-trigger">5m candle closes</small>
+                  </div>
+                  <span class="port right"></span>
+                </div>
+                <span class="connector horizontal"></span>
+                <div class="node feed">
+                  <span class="node-icon blue">⌁</span>
+                  <div>
+                    <strong>Delta market data</strong
+                    ><small id="flow-market">BTCUSD · demo feed</small>
+                  </div>
+                  <span class="port bottom"></span>
+                </div>
+              </div>
+              <div class="vertical-line"></div>
+              <div class="node indicators">
+                <div class="node-title">
+                  <strong>Trend & momentum</strong
+                  ><span class="pill muted">AND</span>
+                </div>
+                <div class="indicator-grid">
+                  <div>
+                    <span class="indicator-icon yellow">∿</span
+                    ><strong>EMA cloud</strong
+                    ><small id="flow-ema">9 / 21 periods</small>
+                  </div>
+                  <div>
+                    <span class="indicator-icon blue">⇅</span
+                    ><strong>CMO</strong
+                    ><small id="flow-cmo">14 · zero cross</small>
+                  </div>
+                  <div>
+                    <span class="indicator-icon pink">▤</span
+                    ><strong>ATR</strong><small id="flow-atr">14 periods</small>
+                  </div>
+                  <div>
+                    <span class="indicator-icon green">▥</span
+                    ><strong>Macro filter</strong
+                    ><small id="flow-macro">1h · SMA 200</small>
+                  </div>
+                </div>
+                <span class="port bottom"></span>
+              </div>
+              <div class="vertical-line"></div>
+              <div class="node risk">
+                <div class="node-title">
+                  <strong>Risk management</strong><span class="shield">◇</span>
+                </div>
+                <dl>
+                  <div>
+                    <dt>Position size</dt>
+                    <dd id="flow-size">4 contracts</dd>
+                  </div>
+                  <div>
+                    <dt>Initial stop</dt>
+                    <dd id="flow-sl">2 × ATR</dd>
+                  </div>
+                  <div>
+                    <dt>Take-profit targets</dt>
+                    <dd id="flow-tp">1 / 2 / 4 × ATR</dd>
+                  </div>
+                </dl>
+                <span class="port bottom"></span>
+              </div>
+              <div class="vertical-line"></div>
+              <div class="node execution">
+                <span class="node-icon black">↗</span>
+                <div>
+                  <strong id="flow-execution">Paper execution</strong
+                  ><small>50% / 25% / remainder exits</small>
+                </div>
+                <span class="pill neutral" id="flow-ready">READY</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+      <section class="bottom-grid">
+        <div class="ladder-panel">
+          <div class="section-heading">
+            <div>
+              <h2>The stop follows the trade</h2>
+              <p>Your profit-protection ladder, for longs and shorts.</p>
+            </div>
+            <span class="pill neutral">AUTOMATIC</span>
+          </div>
+          <div class="ladder">
+            <div class="ladder-step" id="ladder-0">
+              <span class="step-number">01</span
+              ><span class="step-text"
+                ><strong>Entry confirmed</strong
+                ><small id="ladder-initial">SL at 2 × ATR</small></span
+              ><span class="step-check">○</span>
+            </div>
+            <span class="ladder-arrow">→</span>
+            <div class="ladder-step" id="ladder-1">
+              <span class="step-number">02</span
+              ><span class="step-text"
+                ><strong>TP1 reached</strong
+                ><small>SL → Entry price</small></span
+              ><span class="step-check">○</span>
+            </div>
+            <span class="ladder-arrow">→</span>
+            <div class="ladder-step" id="ladder-2">
+              <span class="step-number">03</span
+              ><span class="step-text"
+                ><strong>TP2 reached</strong><small>SL → TP1 price</small></span
+              ><span class="step-check">○</span>
+            </div>
+            <span class="ladder-arrow">→</span>
+            <div class="ladder-step" id="ladder-3">
+              <span class="step-number">04</span
+              ><span class="step-text"
+                ><strong>TP3 reached</strong
+                ><small>Close remainder</small></span
+              ><span class="step-check">○</span>
+            </div>
+          </div>
+          <p class="fine-print">
+            A stop at entry excludes fees and slippage. Demo stop updates are
+            sent to Delta after a confirmed partial fill; targets are monitored
+            while the runner is active.
+          </p>
+        </div>
+        <div class="activity-panel" id="activity">
+          <div class="section-heading">
+            <div>
+              <h2>Recent activity</h2>
+              <p>Every decision leaves a trace.</p>
+            </div>
+            <span class="activity-count" id="event-count">0</span>
+          </div>
+          <div id="events" class="event-list">
+            <p class="empty-activity">Your first event will appear here.</p>
+          </div>
+        </div>
+      </section>
+      <footer>
+        <span><span class="dot"></span> Delta India demo only</span
+        ><span
+          >Independent EMA / CMO / ATR strategy · No production trading</span
+        ><button id="reconcile-button">Reconcile flat account</button>
+      </footer>
+    </main>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <div class="dialog-heading">
+        <div>
+          <div class="eyebrow">MAKE IT YOURS</div>
+          <h2 id="settings-title">Strategy settings</h2>
+        </div>
+        <button
+          id="close-settings"
+          class="icon-button"
+          aria-label="Close settings"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-tabs">
+        <button class="selected" data-tab="strategy">Strategy</button
+        ><button data-tab="risk">Risk & targets</button
+        ><button data-tab="connection">Connection</button>
+      </div>
+      <form id="settings-form">
+        <div id="strategy-fields" class="form-section">
+          <p class="form-note">
+            Changes apply to the next run. Pause and resolve active trades
+            before editing.
+          </p>
+          <div id="strategy-inputs" class="form-grid"></div>
+        </div>
+        <div id="risk-fields" class="form-section hidden">
+          <p class="form-note">
+            TP1 → SL at entry. TP2 → SL at TP1. TP3 closes the remainder.
+          </p>
+          <div id="risk-inputs" class="form-grid"></div>
+          <div class="ratio-note" id="ratio-note"></div>
+        </div>
+        <div id="connection-fields" class="form-section hidden">
+          <div class="demo-card">
+            <span class="node-icon blue">◇</span>
+            <div>
+              <strong>Delta India demo</strong>
+              <p>
+                Use keys from demo.delta.exchange. Production keys are not
+                supported.
+              </p>
+            </div>
+          </div>
+          <label class="field"
+            >Demo API key<input
+              id="api-key"
+              type="password"
+              autocomplete="off"
+              placeholder="Enter a demo API key" /></label
+          ><label class="field"
+            >Demo API secret<input
+              id="api-secret"
+              type="password"
+              autocomplete="off"
+              placeholder="Enter the matching secret"
+          /></label>
+          <p id="credential-status" class="form-note">No credentials saved.</p>
+          <p class="form-note">
+            Saved only on this computer, in the ignored runtime folder. Secrets
+            are never returned to the browser.
+          </p>
+          <button type="button" class="secondary" id="save-connection">
+            Save demo connection
+          </button>
+        </div>
+        <div id="form-error" class="form-error" role="alert"></div>
+        <div class="dialog-footer">
+          <span>Settings are stored locally.</span
+          ><button class="primary" type="submit">
+            Save settings <span>↗</span>
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Start demo execution?</h2>
+      <p>
+        This will place orders using your Delta demo account. Your three targets
+        and stop ladder will be managed while this runner is active.
+      </p>
+      <p>
+        Pausing keeps the existing exchange stop in place and pauses target
+        monitoring.
+      </p>
+      <div class="confirm-actions">
+        <button class="secondary" id="cancel-confirm">Cancel</button
+        ><button class="primary" id="accept-confirm">Start demo run</button>
+      </div>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
