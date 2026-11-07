@@ -258,13 +258,34 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
         "equity_curve": curve,
         "assumptions": [
             "Closed-candle signals; entries at the next candle open with adverse slippage.",
-            "Initial stop and targets use the same rounded ATR levels and allocations as the runner.",
-            "Stops take priority when a candle touches both stop and target. An advanced stop can close the remainder in that same candle.",
-            "Target touches fill at the target with adverse slippage; gaps through stops fill at the worse opening price.",
-            "Fees charged on every fill. Funding, tax, liquidation, spread changes and order-book liquidity are excluded.",
-            "Drawdown is sampled at candle closes; all remaining positions close at the final candle close.",
-            "Historical target touches differ from the demo runner's polling; simulated returns are not exchange execution results.",
-            "History source and contract tick sizes are recorded in this report; public market data is separate from the connected demo account.",
+            (
+                "Initial stop and targets use the same rounded ATR levels "
+                "and allocations as the runner."
+            ),
+            (
+                "Stops take priority when a candle touches both stop and target. "
+                "An advanced stop can close the remainder in that same candle."
+            ),
+            (
+                "Target touches fill at the target with adverse slippage; "
+                "gaps through stops fill at the worse opening price."
+            ),
+            (
+                "Fees charged on every fill. Funding, tax, liquidation, "
+                "spread changes and order-book liquidity are excluded."
+            ),
+            (
+                "Drawdown is sampled at candle closes; "
+                "all remaining positions close at the final candle close."
+            ),
+            (
+                "Historical target touches differ from the demo runner's polling; "
+                "simulated returns are not exchange execution results."
+            ),
+            (
+                "History source and contract tick sizes are recorded in this report; "
+                "public market data is separate from the connected demo account."
+            ),
         ],
     }
     return result
@@ -291,15 +312,22 @@ class Backtests:
                 raise DeltaError("A backtest is already running")
             self.job = {
                 "status": "running",
-                "message": "Loading demo historical candles",
+                "message": (
+                    "Loading Delta India public historical candles"
+                    if request.source == "india_public"
+                    else "Loading Delta demo historical candles"
+                ),
                 "result": None,
             }
             threading.Thread(target=self._run, args=(request,), daemon=True).start()
             return copy.deepcopy(self.job)
 
     def _run(self, request):
-        client = (self.factory or (PublicHistory if request.source == "india_public" else Delta))()
+        client = None
         try:
+            client = (
+                self.factory or (PublicHistory if request.source == "india_public" else Delta)
+            )()
             s = request.settings
             product = client.product(s.symbol)
             candles = client.historical_candles(
@@ -336,7 +364,8 @@ class Backtests:
             with self.lock:
                 self.job = {"status": "error", "message": message, "result": None}
         finally:
-            client.close()
+            if client is not None:
+                client.close()
 
     def progress(self, message):
         with self.lock:

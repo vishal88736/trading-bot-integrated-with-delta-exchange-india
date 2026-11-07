@@ -21,7 +21,9 @@ Production trading is not available. Account reads and all trading requests use 
 
 ## Account funds and holdings
 
-Open **Account** after saving demo credentials in **Connection settings**. Account data refreshes every 15 seconds independently of the trading runner; no trading run is needed to fetch your balances.
+Open **Account** after saving demo credentials in **Connection settings**. Account data refreshes every 15 seconds independently of the trading runner; no trading run is needed to fetch your balances. Wallets, positions, orders and fills load independently, so a slow or failed read does not hold up the other sections.
+
+An open paper trade also appears here under **Your paper position**, including when its runner is paused. This is the bot's saved simulation; it does not alter the exchange wallet or open-position table. When no demo credentials are configured, the page explains how to connect instead of implying that the simulated trade should appear at Delta.
 
 - **Funds:** wallet balance, available trading balance and blocked margin in the selected asset. Available funds are taken from Delta's `available_balance`, rather than inferred by subtracting margin from cash.
 - **Wallet holdings:** every returned asset with isolated, cross and portfolio margin columns. Currencies are kept separate; there is no invented USD conversion or combined account total.

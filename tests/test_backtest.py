@@ -7,7 +7,6 @@ from bot.backtest import BacktestRequest, simulate
 from bot.models import Candle, Signal
 from bot.settings import Settings
 
-
 START = 10000000
 PRODUCT = {"contract_value": "1", "tick_size": "0.1", "quoting_asset": {"symbol": "USD"}}
 
@@ -168,3 +167,16 @@ def test_full_year_at_one_minute_is_supported_without_changing_account_mode():
     value = BacktestRequest(settings=Settings(timeframe="1m"), start=end - 365 * 86400, end=end)
     assert value.source == "india_public"
     assert value.settings.mode == "paper"
+
+
+def test_backtest_client_failure_is_reported_instead_of_staying_running():
+    from bot.backtest import Backtests
+
+    def unavailable():
+        raise RuntimeError("private transport details")
+
+    backtests = Backtests(factory=unavailable)
+    backtests._run(request())
+    snapshot = backtests.snapshot()
+    assert snapshot["status"] == "error" and snapshot["result"] is None
+    assert "private transport details" not in snapshot["message"]

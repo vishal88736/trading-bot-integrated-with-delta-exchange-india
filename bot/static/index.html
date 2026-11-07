@@ -315,6 +315,41 @@
         >
           Connect your demo account to fetch balances.
         </div>
+        <section
+          id="paper-position-panel"
+          class="data-panel paper-position-panel hidden"
+          aria-labelledby="paper-position-title"
+        >
+          <div class="section-heading">
+            <div>
+              <h2 id="paper-position-title">Your paper position</h2>
+              <p>
+                Simulated by this bot, with its saved stop and next target. Demo
+                account details appear below when connected.
+              </p>
+            </div>
+            <span id="paper-position-status" class="pill muted"></span>
+          </div>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            aria-label="Paper position table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Market</th>
+                  <th>Direction</th>
+                  <th>Open contracts</th>
+                  <th>Entry</th>
+                  <th>Stop loss</th>
+                  <th>Next target</th>
+                </tr>
+              </thead>
+              <tbody id="account-paper-position"></tbody>
+            </table>
+          </div>
+        </section>
         <div class="account-toolbar">
           <span id="account-identity">Delta India · Demo</span
           ><label class="asset-picker"

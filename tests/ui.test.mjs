@@ -68,7 +68,7 @@ async function settle() {
   for (let i = 0; i < 4; i++)
     await new Promise((resolve) => setImmediate(resolve));
 }
-async function dashboard(t, account = ready) {
+async function dashboard(t, account = ready, status = initial) {
   const css = readFileSync("bot/static/style.css", "utf8");
   const html = readFileSync("bot/static/index.html", "utf8").replace(
     "</head>",
@@ -80,7 +80,7 @@ async function dashboard(t, account = ready) {
   });
   t.after(() => dom.window.close());
   const calls = [],
-    state = structuredClone(initial),
+    state = structuredClone(status),
     w = dom.window;
   w.structuredClone = structuredClone;
   w.matchMedia = () => ({ matches: true });
@@ -148,6 +148,87 @@ test("disconnected account shows no fabricated zero balances", async (t) => {
     d.getElementById("account-balances").textContent,
     /Connect a demo account/,
   );
+});
+
+test("a paused paper position remains visible in Account without inventing exchange holdings", async (t) => {
+  const status = structuredClone(initial);
+  status.settings.symbol = "ETHUSD";
+  status.state.position = {
+    side: "buy",
+    entry: 2000,
+    stop: 2000,
+    targets: [2010, 2020, 2040],
+    quantities: [2, 1, 1],
+    remaining: 2,
+    stage: 1,
+  };
+  const {
+    w,
+    document: d,
+    state,
+    calls,
+  } = await dashboard(
+    t,
+    { status: "disconnected", refreshing: false, sections: {} },
+    status,
+  );
+  d.getElementById("account-tab").click();
+  assert.equal(
+    d.getElementById("paper-position-panel").classList.contains("hidden"),
+    false,
+  );
+  assert.match(
+    d.getElementById("account-paper-position").textContent,
+    /ETHUSD/,
+  );
+  assert.match(
+    d.getElementById("account-paper-position").textContent,
+    /TP2 · 2,020.00/,
+  );
+  assert.match(
+    d.getElementById("paper-position-status").textContent,
+    /runner paused/,
+  );
+  assert.match(
+    d.getElementById("account-notice").textContent,
+    /paper simulation/,
+  );
+  assert.equal(d.getElementById("account-balance").textContent, "—");
+  assert.doesNotMatch(
+    d.getElementById("account-positions").textContent,
+    /ETHUSD/,
+  );
+  state.state.position = null;
+  w.render(state);
+  assert.equal(
+    d.getElementById("paper-position-panel").classList.contains("hidden"),
+    true,
+  );
+  assert.ok(
+    !calls.some((c) =>
+      ["/api/start", "/api/settings", "/api/reconcile"].includes(c.url),
+    ),
+  );
+});
+
+test("a failed positions refresh never claims that an empty cached snapshot is the current account", async (t) => {
+  const stale = structuredClone(ready);
+  stale.status = "partial";
+  stale.sections.positions = {
+    updated_at: 1700000000,
+    rows: [],
+    error: "Demo API unavailable after three read attempts",
+  };
+  const { document: d } = await dashboard(t, stale);
+  assert.match(
+    d.getElementById("account-positions").textContent,
+    /Current data unavailable/,
+  );
+  assert.doesNotMatch(
+    d.getElementById("account-positions").textContent,
+    /No open positions/,
+  );
+  assert.equal(d.getElementById("account-unrealized").textContent, "—");
 });
 
 test("a year preset submits isolated backtest settings and never starts trading", async (t) => {

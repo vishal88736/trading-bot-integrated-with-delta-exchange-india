@@ -38,6 +38,30 @@ def test_signature_matches_actual_encoded_query_and_body():
     assert "%2C" in request.path_url and options["allow_redirects"] is False
 
 
+def test_all_account_sections_use_signed_demo_reads_without_product_filters():
+    from urllib.parse import urlparse
+
+    session = Session({"success": True, "result": []})
+    client = Delta("fixture-key", "fixture-secret", session)
+    client.balances()
+    client.positions()
+    client.account_orders()
+    client.recent_fills()
+    assert [urlparse(request.url).path for request, _ in session.sent] == [
+        "/v2/wallet/balances",
+        "/v2/positions/margined",
+        "/v2/orders",
+        "/v2/fills",
+    ]
+    for request, _ in session.sent:
+        assert request.method == "GET" and request.url.startswith(DEMO_URL)
+        assert request.headers["api-key"] == "fixture-key"
+        message = "GET" + request.headers["timestamp"] + request.path_url
+        expected = hmac.new(b"fixture-secret", message.encode(), hashlib.sha256).hexdigest()
+        assert request.headers["signature"] == expected
+        assert "product_ids" not in request.url and "product_id=" not in request.url
+
+
 def test_order_timeout_never_retries():
     session = Session(error=requests.Timeout("fixture timeout"))
     client = Delta("fixture-key", "fixture-secret", session)

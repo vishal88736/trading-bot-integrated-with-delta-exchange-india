@@ -1415,6 +1415,10 @@ dialog {
   flex-wrap: wrap;
   margin-bottom: 18px;
 }
+.paper-position-panel {
+  margin-top: 22px;
+  border-color: #b8cdbb;
+}
 .data-freshness {
   font-size: 12px;
   color: #53645b;

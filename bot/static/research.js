@@ -90,6 +90,30 @@ const accountHelp = (message) => {
     return `${message}. Check the API key's account read permissions.`;
   return message;
 };
+function renderPaperPosition(data) {
+  const position = data?.settings.mode === "paper" && data.state.position;
+  $("paper-position-panel").classList.toggle("hidden", !position);
+  if (!position) return;
+  $("paper-position-status").textContent = data.running
+    ? "Paper · monitoring"
+    : "Paper · runner paused";
+  tableRows(
+    "account-paper-position",
+    [position],
+    [
+      () => data.settings.symbol,
+      (p) => (p.side === "buy" ? "Long" : "Short"),
+      (p) => number(p.remaining, 0),
+      (p) => number(p.entry),
+      (p) => number(p.stop),
+      (p) =>
+        p.targets[p.stage] == null
+          ? "All targets reached"
+          : `TP${p.stage + 1} · ${number(p.targets[p.stage])}`,
+    ],
+    "No paper position.",
+  );
+}
 function renderAccount(data) {
   accountSnapshot = data;
   const sections = data.sections || {},
@@ -99,7 +123,10 @@ function renderAccount(data) {
     .filter(([, section]) => section.error)
     .map(([name, section]) => `${name}: ${accountHelp(section.error)}`);
   const labels = {
-    disconnected: "Connect your demo account to see funds and holdings.",
+    disconnected:
+      current?.settings.mode === "paper" && current.state.position
+        ? "Your open trade is a paper simulation, shown below. Connect your Delta demo account in Connection settings to load exchange funds and holdings."
+        : "Connect your demo account in Connection settings to see funds and holdings.",
     loading: "Fetching account information from Delta demo…",
     connected:
       "Connected to Delta India demo. Account data refreshes automatically, even while the runner is paused.",
@@ -155,6 +182,7 @@ function renderAccount(data) {
   const relevant = positions.filter((p) => p.asset === selected);
   const pnlKnown =
     sections.positions?.updated_at &&
+    !sections.positions.error &&
     selected &&
     !positions.some((p) => p.asset == null) &&
     relevant.every((p) => p.unrealized_pnl != null);
@@ -185,12 +213,12 @@ function renderAccount(data) {
     );
   }
   const empty = (name, message) =>
-    sections[name]?.updated_at
-      ? message
-      : data.status === "disconnected"
-        ? "Connect a demo account to load this information."
-        : sections[name]?.error
-          ? "Data unavailable. See the connection error above."
+    data.status === "disconnected"
+      ? "Connect a demo account to load this information."
+      : sections[name]?.error
+        ? "Current data unavailable. See the connection error above."
+        : sections[name]?.updated_at
+          ? message
           : "Waiting for exchange data…";
   tableRows(
     "account-balances",
@@ -425,7 +453,9 @@ function copyBacktestSettings() {
   }
   updateBacktestSummary();
 }
-document.addEventListener("runner-status", () => {
+document.addEventListener("runner-status", (event) => {
+  renderPaperPosition(event.detail);
+  if (accountSnapshot) renderAccount(accountSnapshot);
   if (!backtestBase) copyBacktestSettings();
 });
 $("backtest-copy").onclick = () => {

@@ -4,6 +4,7 @@ import copy
 import math
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from clients.delta import Delta, DeltaError
 
@@ -161,39 +162,53 @@ class Account:
                 "status": status,
                 "refreshing": busy,
                 "sections": sections,
-                "message": "Account reads refresh every 15 seconds; positions may lag the exchange by up to 10 seconds",
+                "message": (
+                    "Account reads refresh every 15 seconds; "
+                    "positions may lag the exchange by up to 10 seconds"
+                ),
             }
 
     def _refresh(self, credentials, generation):
-        client = self.factory(*credentials)
+        # Each section owns its session: a slow wallet read must not delay positions.
+        with ThreadPoolExecutor(max_workers=4, thread_name_prefix="delta-account") as pool:
+            futures = [
+                pool.submit(self._refresh_section, credentials, generation, section, operation)
+                for section, operation in (
+                    ("balances", "balances"),
+                    ("positions", "positions"),
+                    ("orders", "account_orders"),
+                    ("fills", "recent_fills"),
+                )
+            ]
+            for future in futures:
+                future.result()
+
+    def _refresh_section(self, credentials, generation, section, operation):
+        client = None
         try:
-            for section, operation in (
-                ("balances", client.balances),
-                ("positions", client.positions),
-                ("orders", client.account_orders),
-                ("fills", client.recent_fills),
-            ):
-                try:
-                    raw = operation()
-                    data = {
-                        "rows": normalize(section, raw),
-                        "updated_at": int(time.time()),
-                        "error": None,
-                        "truncated": section == "orders" and raw["truncated"],
-                    }
-                except Exception as exc:
-                    message = (
-                        str(exc)
-                        if isinstance(exc, DeltaError)
-                        else f"Could not read demo {section}"
-                    )
-                    for secret in credentials:
+            try:
+                client = self.factory(*credentials)
+                raw = getattr(client, operation)()
+                data = {
+                    "rows": normalize(section, raw),
+                    "updated_at": int(time.time()),
+                    "error": None,
+                    "truncated": section == "orders" and raw["truncated"],
+                }
+            except Exception as exc:
+                message = (
+                    str(exc)
+                    if isinstance(exc, DeltaError)
+                    else f"Could not read demo {section}"
+                )
+                for secret in credentials:
+                    if secret:
                         message = message.replace(secret, "[redacted]")
-                    with self.lock:
-                        data = {**self.sections.get(section, {}), "error": message}
                 with self.lock:
-                    if generation != self.generation:
-                        return
+                    data = {**self.sections.get(section, {}), "error": message}
+            with self.lock:
+                if generation == self.generation:
                     self.sections[section] = data
         finally:
-            client.close()
+            if client is not None:
+                client.close()
