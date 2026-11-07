@@ -1,6 +1,6 @@
 import pytest
 
-from bot.indicators import atr, cmo, ema
+from bot.indicators import atr, cmo, ema, windowed_average, windowed_atr
 from bot.models import Candle
 from bot.settings import Settings
 from strategies.trend_signals import TrendSignals
@@ -35,6 +35,26 @@ def test_closed_candle_cloud_momentum_signals(side, mirror):
 
 def test_no_signal_before_warmup():
     assert TrendSignals(Settings()).evaluate(candles([100, 101]), []) is None
+
+
+@pytest.mark.parametrize("length", [9, 21, 200, 500])
+def test_year_fast_path_matches_live_rolling_ema(length):
+    import math
+
+    prices = [100 + i * 0.05 + 10 * math.sin(i / 7) for i in range(1600)]
+    fast = windowed_average(prices, length, 2 / (length + 1))
+    for i in (599, 600, 999, 1599):
+        assert fast[i] == pytest.approx(ema(prices[max(0, i - 599) : i + 1], length)[-1], abs=1e-9)
+
+
+def test_year_fast_path_matches_live_atr_including_gaps_at_window_start():
+    import math
+
+    prices = [100 + 5 * math.sin(i) for i in range(1600)]
+    bars = candles(prices)
+    fast = windowed_atr(bars, 14)
+    for i in (599, 600, 999, 1599):
+        assert fast[i] == pytest.approx(atr(bars[max(0, i - 599) : i + 1], 14)[-1], abs=1e-9)
 
 
 @pytest.mark.parametrize(

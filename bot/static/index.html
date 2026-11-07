@@ -6,6 +6,7 @@
     <title>Delta / Automation</title>
     <link rel="stylesheet" href="/static/style.css" />
     <script src="/static/app.js" defer></script>
+    <script src="/static/research.js" defer></script>
   </head>
   <body>
     <header class="topbar">
@@ -16,262 +17,691 @@
       <nav aria-label="Main navigation">
         <button class="nav-active" id="overview-tab">Automation</button
         ><button id="strategy-tab">Strategy settings</button
+        ><button id="account-tab">Account</button
+        ><button id="backtest-tab">Backtest</button
         ><button id="activity-tab">Activity</button>
       </nav>
       <button class="connection-pill" id="connection-button">
-        <span class="dot"></span> Demo environment <span class="avatar">D</span>
+        <span class="dot gray"></span>
+        <span id="connection-label">Demo environment</span>
+        <span class="avatar">D</span>
       </button>
     </header>
     <main>
-      <div class="page-heading">
-        <div>
-          <div class="eyebrow">YOUR TRADING WORKSPACE</div>
-          <h1>Automation overview<span class="title-dot">.</span></h1>
-          <p>A clear strategy. A stop that moves with you.</p>
-        </div>
-        <div class="heading-actions">
-          <button
-            class="icon-button"
-            id="settings-button"
-            aria-label="Open settings"
-          >
-            ⚙</button
-          ><button class="secondary" id="stop-button" disabled>Pause</button
-          ><button class="primary" id="start-button">
-            <span>▶</span> Start paper run
-          </button>
-        </div>
-      </div>
-      <div id="notice" class="notice" role="status" aria-live="polite">
-        Paper mode uses Delta demo market data. No exchange orders are sent.
-      </div>
-      <section class="stats" aria-label="Runner metrics">
-        <article>
-          <span>Automation status</span
-          ><strong id="status-value"
-            >Ready <small class="pill muted">IDLE</small></strong
-          >
-          <p id="status-sub">Waiting for you to start</p>
-        </article>
-        <article>
-          <span>Market price <small id="symbol-label">BTCUSD</small></span
-          ><strong id="price-value">—</strong>
-          <p id="price-sub">Demo market feed</p>
-        </article>
-        <article>
-          <span>Realized estimate <small id="mode-label">PAPER</small></span
-          ><strong id="pnl-value">—</strong>
-          <p>Bot fills only · quote currency</p>
-        </article>
-        <article>
-          <span>Open position</span><strong id="position-value">Flat</strong>
-          <p id="position-sub">No active trade</p>
-        </article>
-        <article>
-          <span>Current stop loss</span><strong id="stop-value">—</strong>
-          <p id="stop-sub">Moves after each target</p>
-        </article>
-      </section>
-      <section class="workspace" aria-label="Strategy workspace">
-        <div class="workspace-top">
-          <div class="market-tab">
-            <span class="coin">₿</span><strong id="market-symbol">BTCUSD</strong
-            ><span class="divider"></span><span id="timeframe-label">5m</span
-            ><span class="demo-label">DELTA DEMO</span>
+      <div id="automation-view">
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">YOUR TRADING WORKSPACE</div>
+            <h1>Automation overview<span class="title-dot">.</span></h1>
+            <p>A clear strategy. A stop that moves with you.</p>
           </div>
-          <span class="feed-label" id="feed-status"
-            ><span class="dot gray"></span> Awaiting market data</span
-          >
+          <div class="heading-actions">
+            <button
+              class="icon-button"
+              id="settings-button"
+              aria-label="Open settings"
+            >
+              ⚙</button
+            ><button class="secondary" id="stop-button" disabled>Pause</button
+            ><button class="primary" id="start-button">
+              <span>▶</span> Start paper run
+            </button>
+          </div>
         </div>
-        <div class="workspace-body">
-          <section class="chart-panel" aria-label="Price chart">
-            <div class="panel-heading">
-              <div>
-                <h2>Price action</h2>
-                <span id="chart-caption"
-                  >Closed candles · entries after candle close</span
-                >
-              </div>
-              <button
-                class="tiny-button"
-                id="chart-settings"
-                aria-label="Change chart settings"
-              >
-                •••
-              </button>
+        <div id="notice" class="notice" role="status" aria-live="polite">
+          Paper mode uses Delta demo market data. No exchange orders are sent.
+        </div>
+        <section class="stats" aria-label="Runner metrics">
+          <article>
+            <span>Automation status</span
+            ><strong id="status-value"
+              >Ready <small class="pill muted">IDLE</small></strong
+            >
+            <p id="status-sub">Waiting for you to start</p>
+          </article>
+          <article>
+            <span>Market price <small id="symbol-label">BTCUSD</small></span
+            ><strong id="price-value">—</strong>
+            <p id="price-sub">Demo market feed</p>
+          </article>
+          <article>
+            <span>Realized estimate <small id="mode-label">PAPER</small></span
+            ><strong id="pnl-value">—</strong>
+            <p>Bot fills only · quote currency</p>
+          </article>
+          <article>
+            <span>Open position</span><strong id="position-value">Flat</strong>
+            <p id="position-sub">No active trade</p>
+          </article>
+          <article>
+            <span>Current stop loss</span><strong id="stop-value">—</strong>
+            <p id="stop-sub">Moves after each target</p>
+          </article>
+        </section>
+        <section class="workspace" aria-label="Strategy workspace">
+          <div class="workspace-top">
+            <div class="market-tab">
+              <span class="coin">₿</span
+              ><strong id="market-symbol">BTCUSD</strong
+              ><span class="divider"></span><span id="timeframe-label">5m</span
+              ><span class="demo-label">DELTA DEMO</span>
             </div>
-            <div class="chart-wrap">
-              <svg
-                id="chart"
-                viewBox="0 0 700 430"
-                role="img"
-                aria-label="Candlestick chart of demo market data"
-              ></svg>
-              <div class="chart-empty" id="chart-empty">
-                <div class="empty-icon">⌁</div>
-                <h3>Your market, in focus.</h3>
-                <p>
-                  Start a paper run to load demo candles.<br />No API key needed
-                  for public market data.
-                </p>
-              </div>
-            </div>
-            <div class="chart-footer">
-              <span><i class="legend-dot green"></i> Bullish candle</span
-              ><span><i class="legend-dot red"></i> Bearish candle</span
-              ><span id="last-candle">No candles yet</span>
-            </div>
-          </section>
-          <section class="flow-panel" aria-label="Strategy flow">
-            <div class="panel-heading">
-              <div>
-                <h2>Strategy canvas</h2>
-                <span>Rules in. Decisions out.</span>
-              </div>
-              <span class="pill neutral">CANDLE CLOSE</span>
-            </div>
-            <div class="flow-canvas">
-              <div class="flow-row">
-                <div class="node trigger">
-                  <span class="node-icon orange">↳</span>
-                  <div>
-                    <strong>Start trigger</strong
-                    ><small id="flow-trigger">5m candle closes</small>
-                  </div>
-                  <span class="port right"></span>
+            <span class="feed-label" id="feed-status"
+              ><span class="dot gray"></span> Awaiting market data</span
+            >
+          </div>
+          <div class="workspace-body">
+            <section class="chart-panel" aria-label="Price chart">
+              <div class="panel-heading">
+                <div>
+                  <h2>Price action</h2>
+                  <span id="chart-caption"
+                    >Closed candles · entries after candle close</span
+                  >
                 </div>
-                <span class="connector horizontal"></span>
-                <div class="node feed">
-                  <span class="node-icon blue">⌁</span>
-                  <div>
-                    <strong>Delta market data</strong
-                    ><small id="flow-market">BTCUSD · demo feed</small>
+                <button
+                  class="tiny-button"
+                  id="chart-settings"
+                  aria-label="Change chart settings"
+                >
+                  •••
+                </button>
+              </div>
+              <div class="chart-wrap">
+                <svg
+                  id="chart"
+                  viewBox="0 0 700 430"
+                  role="img"
+                  aria-label="Candlestick chart of demo market data"
+                ></svg>
+                <div class="chart-empty" id="chart-empty">
+                  <div class="empty-icon">⌁</div>
+                  <h3>Your market, in focus.</h3>
+                  <p>
+                    Start a paper run to load demo candles.<br />No API key
+                    needed for public market data.
+                  </p>
+                </div>
+              </div>
+              <div class="chart-footer">
+                <span><i class="legend-dot green"></i> Bullish candle</span
+                ><span><i class="legend-dot red"></i> Bearish candle</span
+                ><span id="last-candle">No candles yet</span>
+              </div>
+            </section>
+            <section class="flow-panel" aria-label="Strategy flow">
+              <div class="panel-heading">
+                <div>
+                  <h2>Strategy canvas</h2>
+                  <span>Rules in. Decisions out.</span>
+                </div>
+                <span class="pill neutral">CANDLE CLOSE</span>
+              </div>
+              <div class="flow-canvas">
+                <div class="flow-row">
+                  <div class="node trigger">
+                    <span class="node-icon orange">↳</span>
+                    <div>
+                      <strong>Start trigger</strong
+                      ><small id="flow-trigger">5m candle closes</small>
+                    </div>
+                    <span class="port right"></span>
+                  </div>
+                  <span class="connector horizontal"></span>
+                  <div class="node feed">
+                    <span class="node-icon blue">⌁</span>
+                    <div>
+                      <strong>Delta market data</strong
+                      ><small id="flow-market">BTCUSD · demo feed</small>
+                    </div>
+                    <span class="port bottom"></span>
+                  </div>
+                </div>
+                <div class="vertical-line"></div>
+                <div class="node indicators">
+                  <div class="node-title">
+                    <strong>Trend & momentum</strong
+                    ><span class="pill muted">AND</span>
+                  </div>
+                  <div class="indicator-grid">
+                    <div>
+                      <span class="indicator-icon yellow">∿</span
+                      ><strong>EMA cloud</strong
+                      ><small id="flow-ema">9 / 21 periods</small>
+                    </div>
+                    <div>
+                      <span class="indicator-icon blue">⇅</span
+                      ><strong>CMO</strong
+                      ><small id="flow-cmo">14 · zero cross</small>
+                    </div>
+                    <div>
+                      <span class="indicator-icon pink">▤</span
+                      ><strong>ATR</strong
+                      ><small id="flow-atr">14 periods</small>
+                    </div>
+                    <div>
+                      <span class="indicator-icon green">▥</span
+                      ><strong>Macro filter</strong
+                      ><small id="flow-macro">1h · SMA 200</small>
+                    </div>
                   </div>
                   <span class="port bottom"></span>
                 </div>
-              </div>
-              <div class="vertical-line"></div>
-              <div class="node indicators">
-                <div class="node-title">
-                  <strong>Trend & momentum</strong
-                  ><span class="pill muted">AND</span>
+                <div class="vertical-line"></div>
+                <div class="node risk">
+                  <div class="node-title">
+                    <strong>Risk management</strong
+                    ><span class="shield">◇</span>
+                  </div>
+                  <dl>
+                    <div>
+                      <dt>Position size</dt>
+                      <dd id="flow-size">4 contracts</dd>
+                    </div>
+                    <div>
+                      <dt>Initial stop</dt>
+                      <dd id="flow-sl">2 × ATR</dd>
+                    </div>
+                    <div>
+                      <dt>Take-profit targets</dt>
+                      <dd id="flow-tp">1 / 2 / 4 × ATR</dd>
+                    </div>
+                  </dl>
+                  <span class="port bottom"></span>
                 </div>
-                <div class="indicator-grid">
+                <div class="vertical-line"></div>
+                <div class="node execution">
+                  <span class="node-icon black">↗</span>
                   <div>
-                    <span class="indicator-icon yellow">∿</span
-                    ><strong>EMA cloud</strong
-                    ><small id="flow-ema">9 / 21 periods</small>
+                    <strong id="flow-execution">Paper execution</strong
+                    ><small>50% / 25% / remainder exits</small>
                   </div>
-                  <div>
-                    <span class="indicator-icon blue">⇅</span
-                    ><strong>CMO</strong
-                    ><small id="flow-cmo">14 · zero cross</small>
-                  </div>
-                  <div>
-                    <span class="indicator-icon pink">▤</span
-                    ><strong>ATR</strong><small id="flow-atr">14 periods</small>
-                  </div>
-                  <div>
-                    <span class="indicator-icon green">▥</span
-                    ><strong>Macro filter</strong
-                    ><small id="flow-macro">1h · SMA 200</small>
-                  </div>
+                  <span class="pill neutral" id="flow-ready">READY</span>
                 </div>
-                <span class="port bottom"></span>
               </div>
-              <div class="vertical-line"></div>
-              <div class="node risk">
-                <div class="node-title">
-                  <strong>Risk management</strong><span class="shield">◇</span>
-                </div>
-                <dl>
-                  <div>
-                    <dt>Position size</dt>
-                    <dd id="flow-size">4 contracts</dd>
-                  </div>
-                  <div>
-                    <dt>Initial stop</dt>
-                    <dd id="flow-sl">2 × ATR</dd>
-                  </div>
-                  <div>
-                    <dt>Take-profit targets</dt>
-                    <dd id="flow-tp">1 / 2 / 4 × ATR</dd>
-                  </div>
-                </dl>
-                <span class="port bottom"></span>
+            </section>
+          </div>
+        </section>
+        <section class="bottom-grid">
+          <div class="ladder-panel">
+            <div class="section-heading">
+              <div>
+                <h2>The stop follows the trade</h2>
+                <p>Your profit-protection ladder, for longs and shorts.</p>
               </div>
-              <div class="vertical-line"></div>
-              <div class="node execution">
-                <span class="node-icon black">↗</span>
-                <div>
-                  <strong id="flow-execution">Paper execution</strong
-                  ><small>50% / 25% / remainder exits</small>
-                </div>
-                <span class="pill neutral" id="flow-ready">READY</span>
+              <span class="pill neutral">AUTOMATIC</span>
+            </div>
+            <div class="ladder">
+              <div class="ladder-step" id="ladder-0">
+                <span class="step-number">01</span
+                ><span class="step-text"
+                  ><strong>Entry confirmed</strong
+                  ><small id="ladder-initial">SL at 2 × ATR</small></span
+                ><span class="step-check">○</span>
               </div>
+              <span class="ladder-arrow">→</span>
+              <div class="ladder-step" id="ladder-1">
+                <span class="step-number">02</span
+                ><span class="step-text"
+                  ><strong>TP1 reached</strong
+                  ><small>SL → Entry price</small></span
+                ><span class="step-check">○</span>
+              </div>
+              <span class="ladder-arrow">→</span>
+              <div class="ladder-step" id="ladder-2">
+                <span class="step-number">03</span
+                ><span class="step-text"
+                  ><strong>TP2 reached</strong
+                  ><small>SL → TP1 price</small></span
+                ><span class="step-check">○</span>
+              </div>
+              <span class="ladder-arrow">→</span>
+              <div class="ladder-step" id="ladder-3">
+                <span class="step-number">04</span
+                ><span class="step-text"
+                  ><strong>TP3 reached</strong
+                  ><small>Close remainder</small></span
+                ><span class="step-check">○</span>
+              </div>
+            </div>
+            <p class="fine-print">
+              A stop at entry excludes fees and slippage. Demo stop updates are
+              sent to Delta after a confirmed partial fill; targets are
+              monitored while the runner is active.
+            </p>
+          </div>
+          <div class="activity-panel" id="activity">
+            <div class="section-heading">
+              <div>
+                <h2>Recent activity</h2>
+                <p>Every decision leaves a trace.</p>
+              </div>
+              <span class="activity-count" id="event-count">0</span>
+            </div>
+            <div id="events" class="event-list">
+              <p class="empty-activity">Your first event will appear here.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+      <section
+        id="account-view"
+        class="hidden page-view"
+        aria-labelledby="account-title"
+      >
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">YOUR DELTA DEMO ACCOUNT</div>
+            <h1 id="account-title">
+              Funds & holdings<span class="title-dot">.</span>
+            </h1>
+            <p>
+              Wallet balances and positions directly from your demo account.
+            </p>
+          </div>
+          <div class="heading-actions">
+            <button class="secondary" id="account-connect">
+              Connection settings</button
+            ><button class="primary" id="account-refresh">
+              Refresh account ↻
+            </button>
+          </div>
+        </div>
+        <div
+          id="account-notice"
+          class="notice"
+          role="status"
+          aria-live="polite"
+        >
+          Connect your demo account to fetch balances.
+        </div>
+        <div class="account-toolbar">
+          <span id="account-identity">Delta India · Demo</span
+          ><label class="asset-picker"
+            >Display asset
+            <select id="account-asset" aria-label="Account display asset">
+              <option value="">—</option>
+            </select></label
+          ><span id="account-updated">Waiting for connection</span>
+        </div>
+        <section
+          class="stats account-stats"
+          aria-label="Exchange wallet metrics"
+        >
+          <article>
+            <span>Wallet balance</span><strong id="account-balance">—</strong>
+            <p>Total held in selected asset</p>
+          </article>
+          <article>
+            <span>Available funds</span
+            ><strong id="account-available">—</strong>
+            <p>Reported available for trading</p>
+          </article>
+          <article>
+            <span>Blocked margin</span><strong id="account-blocked">—</strong>
+            <p>Across margin modes, with fees</p>
+          </article>
+          <article>
+            <span>Unrealized P&amp;L</span
+            ><strong id="account-unrealized">—</strong>
+            <p>Open positions in selected asset</p>
+          </article>
+        </section>
+        <section class="data-panel" aria-labelledby="holdings-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="holdings-title">Wallet holdings</h2>
+              <p>
+                Each asset keeps its own units. Balances are never added across
+                currencies.
+              </p>
+            </div>
+            <span id="balances-freshness" class="data-freshness"
+              >Not fetched</span
+            >
+          </div>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            aria-label="Wallet holdings table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Balance</th>
+                  <th>Available</th>
+                  <th>Blocked margin</th>
+                  <th>Position margin · isolated</th>
+                  <th>Order margin · isolated</th>
+                  <th>Position margin · cross</th>
+                  <th>Order margin · cross</th>
+                  <th>Portfolio margin</th>
+                </tr>
+              </thead>
+              <tbody id="account-balances"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="data-panel" aria-labelledby="positions-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="positions-title">Open positions</h2>
+              <p>
+                All products in your demo account, including trades placed
+                outside this bot.
+              </p>
+            </div>
+            <span id="positions-freshness" class="data-freshness"
+              >Not fetched</span
+            >
+          </div>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            aria-label="Open positions table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Market</th>
+                  <th>Direction</th>
+                  <th>Contracts</th>
+                  <th>Entry</th>
+                  <th>Mark</th>
+                  <th>Margin</th>
+                  <th>Unrealized P&amp;L</th>
+                  <th>Liquidation price</th>
+                  <th>Margin mode</th>
+                </tr>
+              </thead>
+              <tbody id="account-positions"></tbody>
+            </table>
+          </div>
+        </section>
+        <div class="account-tables">
+          <section class="data-panel" aria-labelledby="orders-title">
+            <div class="section-heading">
+              <div>
+                <h2 id="orders-title">Open & pending orders</h2>
+                <p id="orders-count">Across your demo account</p>
+              </div>
+              <span id="orders-freshness" class="data-freshness"
+                >Not fetched</span
+              >
+            </div>
+            <div
+              class="table-scroll"
+              tabindex="0"
+              aria-label="Pending orders table"
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th>Market / ID</th>
+                    <th>Side / type</th>
+                    <th>Remaining</th>
+                    <th>Limit / trigger</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="account-orders"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="data-panel" aria-labelledby="fills-title">
+            <div class="section-heading">
+              <div>
+                <h2 id="fills-title">Recent fills</h2>
+                <p>Latest 50 exchange fills · not simulated trades</p>
+              </div>
+              <span id="fills-freshness" class="data-freshness"
+                >Not fetched</span
+              >
+            </div>
+            <div
+              class="table-scroll"
+              tabindex="0"
+              aria-label="Recent fills table"
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th>Market / time</th>
+                    <th>Side</th>
+                    <th>Quantity</th>
+                    <th>Fill price</th>
+                    <th>Fee</th>
+                  </tr>
+                </thead>
+                <tbody id="account-fills"></tbody>
+              </table>
             </div>
           </section>
         </div>
       </section>
-      <section class="bottom-grid">
-        <div class="ladder-panel">
+      <section
+        id="backtest-view"
+        class="hidden page-view"
+        aria-labelledby="backtest-title"
+      >
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">TEST BEFORE YOU TRADE</div>
+            <h1 id="backtest-title">
+              Strategy backtest<span class="title-dot">.</span>
+            </h1>
+            <p>
+              Replay up to one year of exchange history with your entries,
+              targets, and moving stop.
+            </p>
+          </div>
+          <button id="backtest-export" class="secondary" disabled>
+            Download result JSON ↓
+          </button>
+        </div>
+        <div class="backtest-layout">
+          <form id="backtest-form" class="data-panel backtest-controls">
+            <div class="section-heading">
+              <div>
+                <h2>Test configuration</h2>
+                <p>These parameters are independent of the trading runner.</p>
+              </div>
+            </div>
+            <div class="range-presets" aria-label="Backtest date presets">
+              <button type="button" data-days="7">7 days</button
+              ><button type="button" data-days="30">1 month</button
+              ><button type="button" data-days="90">3 months</button
+              ><button type="button" data-days="180">6 months</button
+              ><button type="button" data-days="365">1 year</button>
+            </div>
+            <div class="form-grid">
+              <label class="field"
+                >Historical data source<select id="backtest-source">
+                  <option value="india_public">
+                    Delta India public market · free
+                  </option>
+                  <option value="demo">Delta demo market · free</option>
+                </select></label
+              ><label class="field"
+                >From (your local time)<input
+                  id="backtest-start"
+                  type="datetime-local"
+                  required /></label
+              ><label class="field"
+                >To (your local time)<input
+                  id="backtest-end"
+                  type="datetime-local"
+                  required /></label
+              ><label class="field"
+                >Starting capital (quote asset)<input
+                  id="backtest-balance"
+                  type="number"
+                  min="1"
+                  max="1000000000"
+                  step="0.01"
+                  value="10000"
+                  required /></label
+              ><label class="field"
+                >Fee per fill (basis points)<input
+                  id="backtest-fee"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value="5"
+                  required /></label
+              ><label class="field"
+                >Slippage per fill (basis points)<input
+                  id="backtest-slippage"
+                  type="number"
+                  min="0"
+                  max="500"
+                  step="0.1"
+                  value="2"
+                  required
+              /></label>
+            </div>
+            <details open>
+              <summary>Entry strategy & market</summary>
+              <div id="backtest-strategy-inputs" class="form-grid"></div>
+            </details>
+            <details>
+              <summary>Sizing, targets & risk limits</summary>
+              <div id="backtest-risk-inputs" class="form-grid"></div>
+            </details>
+            <p class="form-note">
+              Up to one year (366 days), plus indicator warmup. Public history
+              is read without an API key. Account trading stays on demo. Missing
+              historical periods are reported as incomplete.
+            </p>
+            <div class="backtest-actions">
+              <button type="button" id="backtest-copy" class="secondary">
+                Copy runner settings</button
+              ><button type="submit" id="backtest-run" class="primary">
+                Run backtest ▶
+              </button>
+            </div>
+          </form>
+          <div class="backtest-output">
+            <div
+              id="backtest-status"
+              class="notice"
+              role="status"
+              aria-live="polite"
+            >
+              Choose your parameters and run a backtest.
+            </div>
+            <div id="backtest-empty" class="data-panel research-empty">
+              <span class="empty-icon">↗</span>
+              <h2>Know how your rules behaved.</h2>
+              <p>
+                Your equity curve, net results, fees, and every trade appear
+                here after the replay. Backtesting uses public historical data
+                and runs locally for free.
+              </p>
+            </div>
+            <div id="backtest-results" class="hidden">
+              <section
+                class="stats backtest-stats"
+                aria-label="Backtest performance"
+              >
+                <article>
+                  <span>Net P&amp;L</span><strong id="bt-pnl">—</strong>
+                  <p id="bt-return">After trading fees</p>
+                </article>
+                <article>
+                  <span>Closed trades</span><strong id="bt-trades">—</strong>
+                  <p id="bt-wins">Win rate</p>
+                </article>
+                <article>
+                  <span>Maximum drawdown</span
+                  ><strong id="bt-drawdown">—</strong>
+                  <p>At candle closes</p>
+                </article>
+                <article>
+                  <span>Fees paid</span><strong id="bt-fees">—</strong>
+                  <p id="bt-factor">Profit factor</p>
+                </article>
+              </section>
+              <section class="data-panel">
+                <div class="section-heading">
+                  <div>
+                    <h2>Equity through time</h2>
+                    <p id="bt-period">Historical simulation</p>
+                  </div>
+                  <span id="bt-ending" class="equity-ending">—</span>
+                </div>
+                <svg
+                  id="equity-chart"
+                  viewBox="0 0 800 285"
+                  role="img"
+                  aria-label="Backtest equity curve"
+                ></svg>
+              </section>
+              <section class="data-panel">
+                <div class="section-heading">
+                  <div>
+                    <h2>Independent statistics checks</h2>
+                    <p>
+                      The two reference repositories recalculate metrics from
+                      this trade ledger. They do not rerun the strategy or
+                      certify its fills.
+                    </p>
+                  </div>
+                </div>
+                <div id="bt-reference-checks"></div>
+              </section>
+              <section class="data-panel">
+                <div class="section-heading">
+                  <div>
+                    <h2>Execution assumptions</h2>
+                    <p id="bt-coverage">Candle coverage and ambiguity</p>
+                  </div>
+                </div>
+                <ul id="bt-assumptions" class="assumption-list"></ul>
+                <p id="bt-rejections" class="form-note"></p>
+              </section>
+            </div>
+          </div>
+        </div>
+        <section id="bt-trade-panel" class="data-panel hidden">
           <div class="section-heading">
             <div>
-              <h2>The stop follows the trade</h2>
-              <p>Your profit-protection ladder, for longs and shorts.</p>
+              <h2>Trade history</h2>
+              <p>
+                Expand a trade to inspect partial exits and stop advances. All
+                amounts are in the reported quote asset.
+              </p>
             </div>
-            <span class="pill neutral">AUTOMATIC</span>
+            <span id="bt-trade-count"></span>
           </div>
-          <div class="ladder">
-            <div class="ladder-step" id="ladder-0">
-              <span class="step-number">01</span
-              ><span class="step-text"
-                ><strong>Entry confirmed</strong
-                ><small id="ladder-initial">SL at 2 × ATR</small></span
-              ><span class="step-check">○</span>
-            </div>
-            <span class="ladder-arrow">→</span>
-            <div class="ladder-step" id="ladder-1">
-              <span class="step-number">02</span
-              ><span class="step-text"
-                ><strong>TP1 reached</strong
-                ><small>SL → Entry price</small></span
-              ><span class="step-check">○</span>
-            </div>
-            <span class="ladder-arrow">→</span>
-            <div class="ladder-step" id="ladder-2">
-              <span class="step-number">03</span
-              ><span class="step-text"
-                ><strong>TP2 reached</strong><small>SL → TP1 price</small></span
-              ><span class="step-check">○</span>
-            </div>
-            <span class="ladder-arrow">→</span>
-            <div class="ladder-step" id="ladder-3">
-              <span class="step-number">04</span
-              ><span class="step-text"
-                ><strong>TP3 reached</strong
-                ><small>Close remainder</small></span
-              ><span class="step-check">○</span>
-            </div>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            aria-label="Backtest trades table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Entry time</th>
+                  <th>Direction</th>
+                  <th>Entry / initial stop</th>
+                  <th>Size</th>
+                  <th>Net P&amp;L</th>
+                  <th>Final exit</th>
+                  <th>Execution detail</th>
+                </tr>
+              </thead>
+              <tbody id="bt-trade-rows"></tbody>
+            </table>
           </div>
-          <p class="fine-print">
-            A stop at entry excludes fees and slippage. Demo stop updates are
-            sent to Delta after a confirmed partial fill; targets are monitored
-            while the runner is active.
-          </p>
-        </div>
-        <div class="activity-panel" id="activity">
-          <div class="section-heading">
-            <div>
-              <h2>Recent activity</h2>
-              <p>Every decision leaves a trace.</p>
-            </div>
-            <span class="activity-count" id="event-count">0</span>
+          <div class="table-pagination">
+            <button id="bt-prev" class="secondary">← Previous</button
+            ><span id="bt-page"></span
+            ><button id="bt-next" class="secondary">Next →</button>
           </div>
-          <div id="events" class="event-list">
-            <p class="empty-activity">Your first event will appear here.</p>
-          </div>
-        </div>
+        </section>
       </section>
       <footer>
         <span><span class="dot"></span> Delta India demo only</span
@@ -346,6 +776,15 @@
           <button type="button" class="secondary" id="save-connection">
             Save demo connection
           </button>
+          <button type="button" class="secondary" id="test-connection">
+            Fetch account information
+          </button>
+          <p
+            id="connection-result"
+            class="form-note"
+            role="status"
+            aria-live="polite"
+          ></p>
         </div>
         <div id="form-error" class="form-error" role="alert"></div>
         <div class="dialog-footer">

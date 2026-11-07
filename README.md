@@ -1,6 +1,6 @@
 # Trading Bot Integrated with Delta Exchange India
 
-A local trading dashboard for **Delta India demo accounts**, with configurable EMA/CMO/ATR entries and a stop loss that advances after each target. The layout follows the supplied light automation-dashboard reference: market chart, strategy canvas, metrics, settings, and activity.
+A local trading dashboard for **Delta India demo accounts**, with account funds and holdings, configurable EMA/CMO/ATR entries, a stop loss that advances after each target, and free backtests covering up to one year. The layout follows the supplied light automation-dashboard reference with larger text, stronger contrast, and readable forms and tables.
 
 ## Run locally
 
@@ -17,7 +17,47 @@ Open **http://127.0.0.1:8000**. The app binds to loopback only. A normal Python 
 2. Open **Settings → Connection** and enter keys from [Delta's demo account](https://demo.delta.exchange/). Keys must have the required account/trading permissions and your IP must match Delta's API-key settings.
 3. Set **Strategy → Execution mode → demo**, choose the market/timeframes and risk limits, save, then select **Start demo run**. Starting requires an explicit UI confirmation.
 
-Production trading is not available. All exchange requests use `https://cdn-ind.testnet.deltaex.org`. Paper and demo share this public demo market feed; paper mode never sends exchange orders.
+Production trading is not available. Account reads and all trading requests use `https://cdn-ind.testnet.deltaex.org`. Paper and demo share the public demo market feed. The separate public-history client can read unauthenticated product metadata and candles from `https://api.india.delta.exchange` for backtesting; it rejects authenticated requests and writes.
+
+## Account funds and holdings
+
+Open **Account** after saving demo credentials in **Connection settings**. Account data refreshes every 15 seconds independently of the trading runner; no trading run is needed to fetch your balances.
+
+- **Funds:** wallet balance, available trading balance and blocked margin in the selected asset. Available funds are taken from Delta's `available_balance`, rather than inferred by subtracting margin from cash.
+- **Wallet holdings:** every returned asset with isolated, cross and portfolio margin columns. Currencies are kept separate; there is no invented USD conversion or combined account total.
+- **Positions:** all demo account products with direction, quantity, entry/mark prices, margin, exchange-reported unrealized P&L, liquidation price and margin mode.
+- **Orders and fills:** open/pending orders across the account (cursor pagination up to 1000, with a truncation notice) and the latest 50 exchange fills. The bot's paper ledger stays separate from the exchange account.
+- Each section reports its fetch time. Read errors retain the last successful values and mark them stale; disconnected or unavailable balances show a dash. Missing margin/P&L fields are not replaced with zeros. Margined positions can lag the exchange by up to 10 seconds, as documented by Delta.
+
+## Free backtesting, up to one year
+
+Open **Backtest** and choose a date range or the **1 year** preset. Select either **Delta India public market** history (default) or **Delta demo** history. Both use free public candle endpoints with no API key or paid data dependency. Account credentials are never sent to either reference repository, and backtesting never submits exchange orders.
+
+Adjust market, signal/higher timeframes, entry strategy, ATR targets, sizing, leverage and limits in the backtest form. These controls are independent of saved runner settings and can be changed while the runner is active. Set initial quote capital, fees and adverse slippage, then select **Run backtest**. A full year is supported even on the 1-minute timeframe; data is fetched in windows within Delta's 2000-candle API limit. The application refuses missing or gapped history instead of reporting a shorter period as a full-year test.
+
+Results include net P&L, return, candle-close drawdown, closed trades, win rate, profit factor, fees, an equity curve, rejected entries, individual partial exits, and stop advances. The JSON download includes the full equity curve, parameters, source and contract tick size. No trades is a valid result. The final allocation closes at the end of the test.
+
+Signals use closed candles and enter on the next candle open with slippage. The historical engine shares rounded trade levels, allocation and stop-ladder code with the demo runner. Indicator calculation is prepared once for long runs and matches the live runner's rolling 600-candle window. If both stop and target are touched within one candle, the stop wins. After a partial target the advanced stop can also trigger within that candle. This conservative ordering is reported explicitly.
+
+Funding, tax, liquidation, order-book liquidity and intrabar price ordering are not modeled. Historical target touches differ from the demo runner's polling behavior. The realized-loss limit also applies during replay; increase it deliberately in the test form if you want the strategy to keep taking entries after that simulated loss threshold.
+
+### Checking results with your two reference repositories
+
+The optional checks use the actual statistics implementations from [PyBacktestPro](https://github.com/raviwijerathna1/PyBacktestPro) and [trading-strategy-backtesting-suite](https://github.com/Trading-Backtesting/trading-strategy-backtesting-suite). They recalculate drawdown, trade count and win rate; PyBacktestPro also checks ledger P&L and fees, while the suite checks final equity and return. They consume our trade ledger/equity, so **agreement is a statistics check, not an independent replay of strategy orders or proof of fill realism**. Their profit-factor definitions differ, so that field is not claimed as comparable.
+
+```bash
+uv sync --frozen --group research
+uv run --frozen --group research python scripts/setup_references.py
+uv run --frozen --group research delta-bot
+```
+
+The setup helper downloads reviewed, pinned commits under ignored `.runtime/references/`. There are no subscription or paid service dependencies. The UI reports checks as unavailable if optional sources/dependencies are absent; it does not claim they passed. To recheck an exported report:
+
+```bash
+uv run --frozen --group research python scripts/check_backtest_references.py /path/to/backtest.json
+```
+
+Reviewed commits: PyBacktestPro `cf276f47ea664a91b1579d41a0ca5e5a59a8239e`, suite `ceaceb1858d22de9a51c0e19f568961cc4195160`. The first repository has no license file; the suite contains components with differing upstream licenses. Their source is not vendored or redistributed in this project. Checks run in a separate process with `DELTA_*` environment variables removed.
 
 ## Your stop-loss ladder
 
@@ -50,7 +90,7 @@ For a different entry algorithm, edit [strategies/custom_strategy.py](strategies
 ## Runtime and recovery
 
 - Settings, credentials, state and recent activity live under ignored `.runtime/`. Credential/state files are written atomically with owner-only file permissions on Linux. Credentials are stored locally in plaintext, not encrypted; the status API never returns them. Environment keys in `.env` are supported, with saved UI credentials taking precedence.
-- Pause before changing settings. Active or unresolved trades prevent configuration and credential changes. Reuse the same runtime directory when restarting an active demo trade.
+- Pause before changing runner settings; active or unresolved trades prevent changes. Demo credentials can be saved while paper mode runs, so account reads work independently. Changing credentials used for demo execution requires a paused runner and resolved demo positions. Reuse the same runtime directory when restarting an active demo trade.
 - Every exchange write records a pending intent before transmission. Ambiguous timeouts, incomplete fills, unconfirmed stop edits, or account drift pause execution; writes are never retried automatically.
 - For an unresolved demo trade, inspect/close it and cancel remaining product orders in Delta's demo UI. **Reconcile flat account** verifies the selected product is flat with no open orders before clearing local recovery state. It does not place or cancel orders. In paper mode reconciliation discards the simulated position.
 - Quote-notional and contract limits block new entries. The realized-loss circuit breaker uses known bot fills since the runtime was created; it excludes funding, manual trades and unobserved native-stop fills. The displayed P&L is a local estimate, not the account balance or a complete risk ledger. After an external/native stop the app halts for reconciliation instead of inventing a fill price.
@@ -62,12 +102,15 @@ For a different entry algorithm, edit [strategies/custom_strategy.py](strategies
 ```bash
 uv run --frozen pytest
 node --check bot/static/app.js
+node --check bot/static/research.js
+npm ci --ignore-scripts
+npm test
 uv build --no-sources
 ```
 
-Tests cover long/short target ladders, restart recovery, ambiguous writes, configuration limits, request signing, demo-only execution, credentials and local API controls. GitHub Actions tests Python 3.12, 3.13 and 3.14 without credentials or network trading.
+Tests cover account parsing/stale data/credential redaction, historical pagination, replay fills/costs/risk limits, long/short target ladders, rolling-window indicator parity, restart recovery, ambiguous writes, signing and local API controls. DOM tests exercise navigation, account currency separation, independent backtest settings, one-year presets and large equity curves. GitHub Actions tests Python 3.12, 3.13 and 3.14, plus UI DOM behavior on Node 26, without credentials or exchange orders.
 
-Public demo product, ticker and candle reads and a local paper-run API smoke test were verified during implementation. Authenticated demo orders and stop amendments require your demo account and have **not** been verified against the exchange. Browser visual QA was unavailable in the implementation session; API/static-asset checks do not establish visual rendering or profitability.
+Public market reads and a full-year BTCUSD five-minute replay (105,120 test candles, 365 days) were verified during implementation, with both reference statistics checks passing. A seven-day demo-data replay was also checked. These are completed historical simulations, not proof of profitability or demo execution. No demo account credentials were available, so live authenticated balances, demo orders and stop amendments remain unverified. Browser visual QA was unavailable; DOM/API checks do not establish visual rendering.
 
 ## Upstream and modernization
 

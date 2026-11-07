@@ -4,7 +4,8 @@ import time
 import uuid
 from pathlib import Path
 
-from bot.models import Position, RESOLUTIONS, State
+from bot.models import RESOLUTIONS, State
+from bot.risk import next_stop, trade_plan
 from bot.settings import Settings, atomic_json
 from clients.delta import Delta, DeltaError, UncertainOrder, tick_price
 from strategies.custom_strategy import CustomStrategy
@@ -114,46 +115,33 @@ class Engine:
         s = self.settings
         if self.state.position or self.state.realized_quote <= -s.max_loss_quote:
             return
-        sign = 1 if signal.side == "buy" else -1
-        stop = float(tick_price(price - sign * signal.atr * s.sl_atr, self.tick))
-        targets = [float(tick_price(price + sign * signal.atr * x, self.tick)) for x in s.tp_atr]
+        plan = trade_plan(s, signal, price, self.tick)
         if (
             s.contracts > s.max_contracts
             or price * s.contracts * self.multiplier > s.max_notional_quote
         ):
             self.event("risk_block", reason="Position or quote-notional limit exceeded")
             return
-        if not (
-            sign * (price - stop) > 0
-            and all(sign * (b - a) > 0 for a, b in zip([price] + targets, targets))
-        ):
-            raise DeltaError(
-                "ATR levels collapse at the product tick size; increase target distances"
-            )
         if s.mode == "demo":
             self.exchange_action("set_leverage", leverage=s.leverage)
             self.client.set_leverage(self.product_id, s.leverage)
             self.state.pending = None
             self.save()
-        fill, fee = self.fill(signal.side, s.contracts, price, tick_price(stop, self.tick))
+        fill, fee = self.fill(signal.side, s.contracts, price, tick_price(plan.stop, self.tick))
         if abs(fill - price) / price * 10000 > s.max_entry_slippage_bps:
             raise UncertainOrder(
                 "Demo entry exceeded configured slippage; native initial SL remains, reconcile"
             )
-        stop = float(tick_price(fill - sign * signal.atr * s.sl_atr, self.tick))
-        targets = [float(tick_price(fill + sign * signal.atr * x, self.tick)) for x in s.tp_atr]
-        quantities = [s.contracts // 2, s.contracts // 4]
-        quantities.append(s.contracts - sum(quantities))
-        self.state.position = Position(signal.side, fill, stop, targets, quantities, s.contracts)
+        self.state.position = trade_plan(s, signal, fill, self.tick)
         self.state.realized_quote -= fee
-        self.protect(stop)
+        self.protect(self.state.position.stop)
         self.event(
             "entry",
             side=signal.side,
             price=fill,
             quantity=s.contracts,
-            stop=stop,
-            targets=targets,
+            stop=self.state.position.stop,
+            targets=self.state.position.targets,
             reason=signal.reason,
         )
 
@@ -185,7 +173,7 @@ class Engine:
             p.stage += 1
             if self.state.position:
                 # TP1 -> entry, TP2 -> TP1. TP3 closes the final allocation.
-                new_stop = p.entry if p.stage == 1 else p.targets[p.stage - 2]
+                new_stop = next_stop(p)
                 self.protect(new_stop)
                 self.event("stop_moved", stage=p.stage, stop=new_stop)
             self.event(f"tp{stage + 1}", **details)

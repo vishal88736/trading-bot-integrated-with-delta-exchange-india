@@ -3,6 +3,8 @@ import os
 import threading
 from pathlib import Path
 
+from bot.account import Account
+from bot.backtest import Backtests
 from bot.engine import Engine
 from bot.models import State
 from bot.settings import atomic_json, read_settings
@@ -17,6 +19,8 @@ class Service:
         self.thread = None
         self.engine = None
         self.error = None
+        self.account = Account(self.credentials)
+        self.backtests = Backtests(reference_root=root / "references")
 
     @property
     def running(self):
@@ -47,6 +51,16 @@ class Service:
                 raise DeltaError(
                     "Resolve the existing position before changing settings or credentials"
                 )
+
+    def assert_credentials_editable(self):
+        # Account reads can be connected while a paper simulation is active.
+        # Existing demo orders keep their original credentials for recovery.
+        if self.running and read_settings(self.root).mode == "demo":
+            raise DeltaError("Pause the demo runner before changing its account credentials")
+        for path in self.root.glob("demo-*.json"):
+            data = json.loads(path.read_text())
+            if data.get("position") or data.get("pending"):
+                raise DeltaError("Resolve the existing demo position before changing credentials")
 
     def start(self):
         with self.lock:

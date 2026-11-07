@@ -15,3 +15,4 @@ dist/
 *.egg-info/
 .DS_Store
 artifacts/
+node_modules/

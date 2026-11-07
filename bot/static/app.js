@@ -141,6 +141,7 @@ function render(data) {
     ? `${data.running ? "● " : "○ "}${data.running ? "Demo feed connected" : "Runner paused · last data"}`
     : "○ Awaiting market data";
   drawChart(data.candles, p);
+  document.dispatchEvent(new CustomEvent("runner-status", { detail: data }));
 }
 async function refresh() {
   if (polling) return;
@@ -166,9 +167,11 @@ function drawChart(candles, position) {
   svg.replaceChildren();
   $("chart-empty").classList.toggle("hidden", candles.length > 0);
   if (!candles.length) return;
-  const bars = candles.slice(-75),
+  const width = Math.max(320, svg.clientWidth || 700);
+  svg.setAttribute("viewBox", `0 0 ${width} 430`);
+  const bars = candles.slice(-Math.min(75, Math.floor(width / 7))),
     left = 10,
-    right = 617,
+    right = width - 100,
     top = 26,
     bottom = 348;
   let low = Math.min(...bars.map((c) => c.low)),
@@ -196,7 +199,7 @@ function drawChart(candles, position) {
       }),
       svgNode(
         "text",
-        { x: right + 10, y: lineY + 3, fill: "#a1a998", "font-size": 9 },
+        { x: right + 10, y: lineY + 3, fill: "#53645b", "font-size": 12 },
         number(value, 1),
       ),
     );
@@ -237,8 +240,8 @@ function drawChart(candles, position) {
           {
             x,
             y: 425,
-            fill: "#a1a998",
-            "font-size": 8,
+            fill: "#53645b",
+            "font-size": 12,
             "text-anchor": "middle",
           },
           new Date(c.time * 1000).toLocaleTimeString([], {
@@ -250,9 +253,9 @@ function drawChart(candles, position) {
   });
   if (position) {
     const levels = [
-      [position.entry, "Entry", "#8b99b3"],
-      [position.stop, "SL", "#cb897c"],
-      ...position.targets.map((value, i) => [value, `TP${i + 1}`, "#87a773"]),
+      [position.entry, "Entry", "#435c87"],
+      [position.stop, "SL", "#a04435"],
+      ...position.targets.map((value, i) => [value, `TP${i + 1}`, "#2d6c45"]),
     ];
     for (const [value, label, color] of levels)
       svg.append(
@@ -267,7 +270,7 @@ function drawChart(candles, position) {
         }),
         svgNode(
           "text",
-          { x: left + 5, y: y(value) - 5, fill: color, "font-size": 9 },
+          { x: left + 5, y: y(value) - 5, fill: color, "font-size": 12 },
           `${label} ${number(value)}`,
         ),
       );
@@ -450,6 +453,7 @@ $("save-connection").onclick = async () => {
       "Demo credentials saved securely on this computer.";
     toast("Demo connection saved.");
     await refresh();
+    document.dispatchEvent(new Event("credentials-saved"));
   } catch (error) {
     $("form-error").textContent = error.message;
   }

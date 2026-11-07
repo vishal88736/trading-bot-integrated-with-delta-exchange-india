@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from bot.service import Service
+from bot.backtest import BacktestRequest
 from bot.settings import Settings, atomic_json
 from clients.delta import DeltaError
 
@@ -112,7 +113,7 @@ def create_app(root: Path = Path(".runtime")):
     @app.post("/api/credentials")
     def credentials(value: Credentials):
         with service.lock:
-            service.assert_editable()
+            service.assert_credentials_editable()
             key, secret = (
                 value.api_key.get_secret_value().strip(),
                 value.api_secret.get_secret_value().strip(),
@@ -120,7 +121,24 @@ def create_app(root: Path = Path(".runtime")):
             if not key or not secret:
                 raise HTTPException(422, "Both demo key and secret are required")
             atomic_json(root / "credentials.json", {"api_key": key, "api_secret": secret})
+            service.account.invalidate()
             return {"saved": True}
+
+    @app.get("/api/account")
+    def account():
+        return service.account.snapshot()
+
+    @app.post("/api/account/refresh")
+    def refresh_account():
+        return service.account.snapshot(force=True)
+
+    @app.get("/api/backtests")
+    def backtest_status():
+        return service.backtests.snapshot()
+
+    @app.post("/api/backtests")
+    def backtest(value: BacktestRequest):
+        return service.backtests.start(value)
 
     @app.post("/api/start")
     def start():

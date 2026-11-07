@@ -40,6 +40,8 @@ def tick_price(price: float, tick: str) -> str:
 
 
 class Delta:
+    base_url = DEMO_URL
+
     def __init__(self, api_key="", api_secret="", session=None):
         self.api_key, self.api_secret = api_key, api_secret
         self.session = session or requests.Session()
@@ -48,7 +50,7 @@ class Delta:
     def close(self):
         self.session.close()
 
-    def request(self, method, path, *, params=None, body=None, auth=False):
+    def request(self, method, path, *, params=None, body=None, auth=False, envelope=False):
         if method != "GET" and not auth:
             raise DeltaError("Exchange writes require demo credentials")
         if auth and not (self.api_key and self.api_secret):
@@ -57,7 +59,7 @@ class Delta:
             payload = json.dumps(body, separators=(",", ":"), allow_nan=False) if body else ""
             request = requests.Request(
                 method,
-                DEMO_URL + path,
+                self.base_url + path,
                 params=params,
                 data=payload,
                 headers={
@@ -111,7 +113,7 @@ class Delta:
                 )
                 code = re.sub(r"[^a-zA-Z0-9_ -]", "", str(code))[:70]
                 raise DeltaError(f"Demo API HTTP {response.status_code}: {code}")
-            return data.get("result", {})
+            return data if envelope else data.get("result", {})
         raise DeltaError("Demo API read failed")
 
     def product(self, symbol):
@@ -166,6 +168,80 @@ class Delta:
 
     def position(self, product_id):
         return self.request("GET", "/v2/positions", params={"product_id": product_id}, auth=True)
+
+    def balances(self):
+        return self.request("GET", "/v2/wallet/balances", auth=True)
+
+    def positions(self):
+        return self.request("GET", "/v2/positions/margined", auth=True)
+
+    def account_orders(self):
+        rows, cursor, seen = [], None, set()
+        for _ in range(10):
+            params = {"states": "open,pending", "page_size": 100}
+            if cursor:
+                params["after"] = cursor
+            page = self.request("GET", "/v2/orders", params=params, auth=True, envelope=True)
+            if not isinstance(page.get("result"), list):
+                raise DeltaError("Demo orders response has an unexpected format")
+            rows.extend(page["result"])
+            cursor = (page.get("meta") or {}).get("after")
+            if not cursor or not page["result"]:
+                return {"rows": rows, "truncated": False}
+            if cursor in seen:
+                raise DeltaError("Demo order pagination did not advance")
+            seen.add(cursor)
+        return {"rows": rows, "truncated": True}
+
+    def recent_fills(self):
+        return self.request("GET", "/v2/fills", params={"page_size": 50}, auth=True)
+
+    def historical_candles(self, symbol, resolution, start, end, progress=None):
+        """Fetch complete, closed history in time windows below Delta's 2000-bar cap."""
+        interval = RESOLUTIONS[resolution]
+        first = ((start + interval - 1) // interval) * interval
+        end = (min(end, int(time.time())) // interval) * interval
+        if first >= end or (end - first) // interval > 530000:
+            raise DeltaError("Choose a range up to one year")
+        result = {}
+        cursor = first
+        while cursor < end:
+            boundary = min(end, cursor + 1999 * interval)
+            rows = self.request(
+                "GET",
+                "/v2/history/candles",
+                params={
+                    "symbol": symbol,
+                    "resolution": resolution,
+                    "start": cursor,
+                    "end": boundary,
+                },
+            )
+            if not isinstance(rows, list):
+                raise DeltaError("Demo candle response has an unexpected format")
+            for row in rows:
+                candle = Candle.parse(row)
+                if first <= candle.time and candle.time + interval <= end:
+                    result[candle.time] = candle
+            if any(timestamp not in result for timestamp in range(cursor, boundary, interval)):
+                raise DeltaError(
+                    f"Incomplete {resolution} history in the requested period; choose another source or later start date"
+                )
+            cursor = boundary
+            if progress:
+                progress(f"Loading {resolution} history: {len(result)} candles")
+        ordered = sorted(result.values(), key=lambda c: c.time)
+        if (
+            len(ordered) != (end - first) // interval
+            or not ordered
+            or ordered[0].time != first
+            or ordered[-1].time != end - interval
+            or any(b.time - a.time != interval for a, b in zip(ordered, ordered[1:]))
+        ):
+            raise DeltaError(
+                f"Incomplete {resolution} history. Choose another source or a later start date"
+            )
+        return ordered
 
     def open_orders(self, product_id):
         orders = self.request(
@@ -228,3 +304,23 @@ class Delta:
             if attempt < 2:
                 time.sleep(1)
         raise DeltaError("Native demo stop could not be confirmed; inspect the account")
+
+
+class PublicHistory(Delta):
+    """Public India market history only. Authenticated requests and writes are forbidden."""
+
+    base_url = "https://api.india.delta.exchange"
+
+    def request(self, method, path, *, params=None, body=None, auth=False, envelope=False):
+        if (
+            method != "GET"
+            or auth
+            or path not in ("/v2/history/candles",)
+            and not path.startswith("/v2/products/")
+        ):
+            raise DeltaError(
+                "Public history client permits only unauthenticated product and candle reads"
+            )
+        return super().request(
+            method, path, params=params, body=body, auth=False, envelope=envelope
+        )
