@@ -6,7 +6,8 @@ let backtestBase = null,
   backtestRunning = false,
   backtestPolling = false;
 let backtestResult = null,
-  backtestPage = 0;
+  backtestPage = 0,
+  backtestResultTab = "overview";
 const dateTime = (value) => {
   if (value == null || value === "") return "—";
   const numeric = Number(value);
@@ -30,7 +31,8 @@ function showView(view) {
   if (view === "account") refreshAccount();
   if (view === "backtest") {
     if (!backtestBase && current) copyBacktestSettings();
-    if (backtestResult) drawEquity(backtestResult.equity_curve);
+    if (backtestResult && backtestResultTab === "overview")
+      drawEquity(backtestResult.equity_curve);
   }
 }
 $("overview-tab").onclick = () => showView("automation");
@@ -286,8 +288,131 @@ for (const [section, key] of fields) {
   const input = copy.querySelector("input,select");
   input.id = `backtest-setting-${key}`;
   input.name = `backtest-${key}`;
-  $(`backtest-${section}-inputs`).append(copy);
+  const primary = [
+    "symbol",
+    "strategy",
+    "timeframe",
+    "higher_timeframe",
+  ].includes(key);
+  if (primary) {
+    const label = {
+      symbol: "Market",
+      strategy: "Entry strategy",
+      timeframe: "Signal timeframe",
+      higher_timeframe: "Higher timeframe",
+    }[key];
+    copy.firstChild.textContent = label;
+    if (key === "strategy")
+      for (const option of input.options)
+        option.textContent =
+          option.value === "trend_signals"
+            ? "Trend signals"
+            : "Custom strategy";
+  }
+  $(primary ? "backtest-market-inputs" : `backtest-${section}-inputs`).append(
+    copy,
+  );
 }
+function updateBacktestSummary() {
+  const value = (key) => $(`backtest-setting-${key}`).value;
+  $("backtest-config-summary").textContent =
+    `EMA ${value("fast_ema")} / ${value("slow_ema")} · CMO ${value("cmo_length")} · ATR ${value("atr_length")} · ${value("contracts")} contracts · ${$("backtest-fee").value} bps fee`;
+}
+function selectBacktestSettings(tab) {
+  document.querySelectorAll("[data-bt-settings]").forEach((button) => {
+    const active = button.dataset.btSettings === tab;
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  document
+    .querySelectorAll("[data-bt-settings-panel]")
+    .forEach((panel) =>
+      panel.classList.toggle("hidden", panel.dataset.btSettingsPanel !== tab),
+    );
+}
+function openBacktestSettings(tab = "strategy") {
+  selectBacktestSettings(tab);
+  $("backtest-settings-error").textContent = "";
+  if (!$("backtest-settings-dialog").open)
+    $("backtest-settings-dialog").showModal();
+}
+$("backtest-settings-open").onclick = () => openBacktestSettings();
+$("backtest-settings-close").onclick = () =>
+  $("backtest-settings-dialog").close();
+$("backtest-settings-done").onclick = () => {
+  const invalid = [
+    ...$("backtest-settings-dialog").querySelectorAll("input,select"),
+  ].find((input) => !input.validity.valid);
+  if (invalid) {
+    revealInvalidBacktestSetting(invalid);
+    return;
+  }
+  updateBacktestSummary();
+  $("backtest-settings-dialog").close();
+};
+function revealInvalidBacktestSetting(input) {
+  const panel = input.closest("[data-bt-settings-panel]");
+  if (!panel) return;
+  openBacktestSettings(panel.dataset.btSettingsPanel);
+  $("backtest-settings-error").textContent = input.validationMessage;
+  input.focus();
+}
+$("backtest-form").addEventListener(
+  "invalid",
+  (event) => {
+    if (event.target.closest("#backtest-settings-dialog")) {
+      event.preventDefault();
+      revealInvalidBacktestSetting(event.target);
+    }
+  },
+  true,
+);
+$("backtest-settings-dialog").addEventListener("input", updateBacktestSummary);
+$("backtest-settings-dialog").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches("input")) {
+    event.preventDefault();
+    $("backtest-settings-done").click();
+  }
+});
+function selectBacktestResult(tab) {
+  backtestResultTab = tab;
+  for (const [name, id] of [
+    ["overview", "bt-overview-panel"],
+    ["trades", "bt-trade-panel"],
+    ["methodology", "bt-methodology-panel"],
+  ])
+    $(id).classList.toggle("hidden", tab !== name);
+  document.querySelectorAll("[data-bt-result]").forEach((button) => {
+    const active = button.dataset.btResult === tab;
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
+  if (tab === "overview" && backtestResult)
+    drawEquity(backtestResult.equity_curve);
+}
+function wireBacktestTabs(selector, dataKey, onSelect) {
+  const buttons = [...document.querySelectorAll(selector)];
+  buttons.forEach((button, index) => {
+    button.onclick = () => onSelect(button.dataset[dataKey]);
+    button.onkeydown = (event) => {
+      const offsets = {
+        ArrowRight: (index + 1) % buttons.length,
+        ArrowLeft: (index + buttons.length - 1) % buttons.length,
+        Home: 0,
+        End: buttons.length - 1,
+      };
+      if (!(event.key in offsets)) return;
+      event.preventDefault();
+      const next = buttons[offsets[event.key]];
+      onSelect(next.dataset[dataKey]);
+      next.focus();
+    };
+  });
+}
+wireBacktestTabs("[data-bt-settings]", "btSettings", selectBacktestSettings);
+wireBacktestTabs("[data-bt-result]", "btResult", selectBacktestResult);
+selectBacktestSettings("strategy");
+selectBacktestResult("overview");
 function copyBacktestSettings() {
   if (!current) return;
   backtestBase = structuredClone(current.settings);
@@ -298,6 +423,7 @@ function copyBacktestSettings() {
       ? backtestBase.tp_atr[Number(key[2])]
       : backtestBase[key];
   }
+  updateBacktestSummary();
 }
 document.addEventListener("runner-status", () => {
   if (!backtestBase) copyBacktestSettings();
@@ -322,8 +448,19 @@ document.querySelectorAll(".range-presets button").forEach(
       else start.setDate(start.getDate() - Number(button.dataset.days));
       $("backtest-start").value = localInput(start);
       $("backtest-end").value = localInput(end);
+      document
+        .querySelectorAll(".range-presets button")
+        .forEach((preset) =>
+          preset.setAttribute("aria-pressed", String(preset === button)),
+        );
     }),
 );
+for (const id of ["backtest-start", "backtest-end"])
+  $(id).addEventListener("input", () =>
+    document
+      .querySelectorAll(".range-presets button")
+      .forEach((button) => button.setAttribute("aria-pressed", "false")),
+  );
 $("backtest-form").onsubmit = async (event) => {
   event.preventDefault();
   if (!backtestBase) return;
@@ -355,6 +492,8 @@ function setBacktestJob(job) {
   backtestRunning = job.status === "running";
   $("backtest-status").textContent = job.message;
   $("backtest-status").classList.toggle("error", job.status === "error");
+  $("backtest-status").classList.toggle("is-running", backtestRunning);
+  $("backtest-form").setAttribute("aria-busy", String(backtestRunning));
   for (const control of $("backtest-form").querySelectorAll(
     "input,select,button",
   ))
@@ -368,6 +507,12 @@ function setBacktestJob(job) {
     $("bt-trade-panel").classList.add("hidden");
     $("backtest-empty").classList.remove("hidden");
     $("backtest-export").disabled = true;
+    $("backtest-empty-title").textContent = backtestRunning
+      ? "Your backtest is running"
+      : "This test could not complete";
+    $("backtest-empty-copy").textContent = backtestRunning
+      ? "Fetching historical candles and replaying your strategy."
+      : "Review the message above and adjust your parameters to try again.";
   }
   if (job.result) renderBacktest(job.result);
 }
@@ -388,8 +533,10 @@ function renderBacktest(result) {
   backtestPage = 0;
   $("backtest-results").classList.remove("hidden");
   $("backtest-empty").classList.add("hidden");
-  $("bt-trade-panel").classList.remove("hidden");
   $("backtest-export").disabled = false;
+  $("bt-result-title").textContent =
+    `${result.settings.symbol} · ${result.settings.timeframe} backtest`;
+  $("bt-result-source").textContent = result.source;
   const summary = result.summary;
   $("bt-pnl").textContent = `${number(summary.net_pnl)} ${result.quote}`;
   $("bt-pnl").className = summary.net_pnl >= 0 ? "positive" : "negative";
@@ -402,12 +549,20 @@ function renderBacktest(result) {
   $("bt-fees").textContent = `${number(summary.fees)} ${result.quote}`;
   $("bt-factor").textContent =
     `Profit factor: ${summary.profit_factor == null ? (summary.trades && summary.gross_profit > 0 ? "No losing trades" : "—") : number(summary.profit_factor)}`;
+  const periodDate = (timestamp) =>
+    new Date(timestamp * 1000).toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   $("bt-period").textContent =
-    `${result.settings.symbol} · ${result.settings.timeframe} / ${result.settings.higher_timeframe} · ${dateTime(result.actual_start)} to ${dateTime(result.actual_end)} · ${result.source}`;
+    `${periodDate(result.actual_start)} – ${periodDate(result.actual_end)} · ${result.settings.higher_timeframe} trend filter`;
   $("bt-ending").textContent =
     `Ending equity ${number(summary.ending_equity)} ${result.quote}`;
   $("bt-coverage").textContent =
-    `${result.candles} test candles · ${result.warmup_candles} earlier warmup candles · ${result.ambiguous_candles} candles with ambiguous exit order`;
+    `${number(result.candles, 0)} candles · ${number(result.warmup_candles, 0)} warmup · ${number(result.ambiguous_candles, 0)} with ambiguous exit order`;
+  $("bt-chart-candles").textContent =
+    `${number(result.candles, 0)} historical candles`;
   $("bt-reference-checks").replaceChildren();
   for (const check of result.reference_checks || []) {
     const row = document.createElement("div");
@@ -445,7 +600,7 @@ function renderBacktest(result) {
   $("bt-rejections").textContent = rejected.length
     ? `Skipped entries: ${rejected.map(([key, value]) => `${key.replaceAll("_", " ")}: ${value}`).join("; ")}`
     : "No entries were rejected by the configured limits.";
-  drawEquity(result.equity_curve);
+  selectBacktestResult("overview");
   renderTrades();
 }
 function drawEquity(points) {
@@ -453,7 +608,7 @@ function drawEquity(points) {
   svg.replaceChildren();
   if (!points.length) return;
   const width = Math.max(320, svg.clientWidth || 800),
-    height = 285;
+    height = 320;
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   const left = 80,
     right = width - 18,
@@ -546,33 +701,74 @@ function renderTrades() {
       (t) => number(t.net_pnl),
       (t) => pair(t.final_reason.replaceAll("_", " "), dateTime(t.exit_time)),
       (t) => {
-        const details = document.createElement("details"),
-          summary = document.createElement("summary");
-        summary.textContent = "Exits & stop updates";
-        details.append(summary);
-        const exits = document.createElement("ul");
-        for (const leg of t.exits) {
-          const li = document.createElement("li");
-          li.textContent = `${dateTime(leg.time)} · ${leg.reason.replaceAll("_", " ")} · ${leg.quantity} @ ${number(leg.price)}`;
-          exits.append(li);
-        }
-        for (const move of t.stop_updates) {
-          const li = document.createElement("li");
-          li.textContent = `After TP${move.after_target}: SL → ${number(move.stop)}`;
-          exits.append(li);
-        }
-        details.append(exits);
-        return details;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "bt-trade-link";
+        button.textContent = "View trade ↗";
+        button.onclick = () => openBacktestTrade(t);
+        return button;
       },
     ],
     "No signals met these rules in the selected period. No trades were invented.",
   );
   $("bt-trade-count").textContent = `${trades.length} closed trades`;
+  $("bt-trade-badge").textContent = trades.length;
   $("bt-page").textContent =
     `Page ${backtestPage + 1} of ${Math.max(1, Math.ceil(trades.length / pageSize))}`;
   $("bt-prev").disabled = backtestPage === 0;
   $("bt-next").disabled = (backtestPage + 1) * pageSize >= trades.length;
 }
+function openBacktestTrade(trade) {
+  const quote = backtestResult.quote;
+  $("bt-trade-title").textContent =
+    `${backtestResult.settings.symbol} · ${trade.side === "buy" ? "Long" : "Short"}`;
+  $("bt-trade-dates").textContent =
+    `${dateTime(trade.entry_time)} → ${dateTime(trade.exit_time)}`;
+  $("bt-trade-summary").replaceChildren();
+  for (const [name, value] of [
+    ["Entry", number(trade.entry)],
+    ["Initial stop", number(trade.initial_stop)],
+    ["Contracts", trade.quantity],
+    ["Net P&L", `${number(trade.net_pnl)} ${quote}`],
+    ["Trading fees", `${number(trade.fees)} ${quote}`],
+  ]) {
+    const group = document.createElement("div"),
+      term = document.createElement("dt"),
+      amount = document.createElement("dd");
+    term.textContent = name;
+    amount.textContent = value;
+    group.append(term, amount);
+    $("bt-trade-summary").append(group);
+  }
+  const events = [
+    ...trade.exits.map((leg) => ({
+      time: leg.time,
+      order: leg.reason.startsWith("tp") ? Number(leg.reason.slice(2)) * 2 : 99,
+      title: `${leg.reason.replaceAll("_", " ").toUpperCase()} · ${leg.quantity} contracts`,
+      detail: `Filled at ${number(leg.price)} · ${number(leg.net_pnl)} ${quote} net`,
+    })),
+    ...trade.stop_updates.map((move) => ({
+      time: move.time,
+      order: move.after_target * 2 + 1,
+      title: `Stop updated after TP${move.after_target}`,
+      detail: `SL → ${number(move.stop)}`,
+    })),
+  ].sort((a, b) => a.time - b.time || a.order - b.order);
+  $("bt-trade-timeline").replaceChildren();
+  for (const event of events) {
+    const row = document.createElement("li"),
+      title = document.createElement("strong"),
+      detail = document.createElement("p"),
+      time = document.createElement("small");
+    title.textContent = event.title;
+    detail.textContent = event.detail;
+    time.textContent = dateTime(event.time);
+    row.append(title, detail, time);
+    $("bt-trade-timeline").append(row);
+  }
+  $("bt-trade-dialog").showModal();
+}
+$("bt-trade-close").onclick = () => $("bt-trade-dialog").close();
 $("bt-prev").onclick = () => {
   backtestPage--;
   renderTrades();
@@ -595,7 +791,11 @@ $("backtest-export").onclick = () => {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 };
 window.addEventListener("resize", () => {
-  if (activeView === "backtest" && backtestResult)
+  if (
+    activeView === "backtest" &&
+    backtestResult &&
+    backtestResultTab === "overview"
+  )
     drawEquity(backtestResult.equity_curve);
   if (activeView === "automation" && current)
     drawChart(current.candles, current.state.position);

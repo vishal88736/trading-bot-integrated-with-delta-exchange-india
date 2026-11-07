@@ -242,3 +242,157 @@ test("dashboard text has a 12px minimum and readable form controls", async (t) =
     parseFloat(w.getComputedStyle(d.getElementById("api-key")).fontSize) >= 16,
   );
 });
+
+test("backtest advanced settings stay separate from the essential setup and submit their edits", async (t) => {
+  const { document: d, calls } = await dashboard(t);
+  const advanced = d.getElementById("backtest-settings-dialog");
+  assert.equal(advanced.open, false);
+  assert.equal(
+    d.getElementById("backtest-market-inputs").querySelectorAll("input,select")
+      .length,
+    4,
+  );
+  assert.ok(advanced.contains(d.getElementById("backtest-setting-fast_ema")));
+  assert.ok(advanced.contains(d.getElementById("backtest-setting-tp0")));
+  d.getElementById("backtest-settings-open").click();
+  assert.equal(advanced.open, true);
+  d.getElementById("bt-settings-risk").click();
+  assert.equal(
+    d.getElementById("bt-settings-risk").getAttribute("aria-selected"),
+    "true",
+  );
+  d.getElementById("backtest-setting-sl_atr").value = "2.5";
+  d.getElementById("backtest-settings-done").click();
+  assert.equal(advanced.open, false);
+  assert.equal(
+    calls.filter((c) => c.url === "/api/backtests" && c.body).length,
+    0,
+  );
+  d.getElementById("backtest-form").dispatchEvent(
+    new d.defaultView.Event("submit", { cancelable: true, bubbles: true }),
+  );
+  await settle();
+  assert.equal(
+    calls.find((c) => c.url === "/api/backtests" && c.body).body.settings
+      .sl_atr,
+    2.5,
+  );
+});
+
+test("invalid hidden strategy controls open the correct settings tab", async (t) => {
+  const { document: d } = await dashboard(t);
+  const input = d.getElementById("backtest-setting-tp0");
+  input.value = "-1";
+  input.dispatchEvent(new d.defaultView.Event("invalid", { cancelable: true }));
+  assert.equal(d.getElementById("backtest-settings-dialog").open, true);
+  assert.equal(
+    d.getElementById("bt-settings-risk").getAttribute("aria-selected"),
+    "true",
+  );
+  assert.ok(d.getElementById("backtest-settings-error").textContent.length > 0);
+  d.getElementById("backtest-settings-done").click();
+  assert.equal(d.getElementById("backtest-settings-dialog").open, true);
+  input.value = "1";
+  d.getElementById("backtest-settings-done").click();
+  assert.equal(d.getElementById("backtest-settings-dialog").open, false);
+});
+
+test("result tabs switch with the keyboard and trade details open outside the table", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  const trade = {
+    side: "buy",
+    entry_time: 1700000000,
+    exit_time: 1700000900,
+    entry: 100,
+    initial_stop: 80,
+    quantity: 4,
+    net_pnl: 20,
+    fees: 0,
+    final_reason: "advanced_stop",
+    exits: [
+      { time: 1700000900, reason: "tp1", quantity: 2, price: 110, net_pnl: 20 },
+      {
+        time: 1700000900,
+        reason: "advanced_stop",
+        quantity: 2,
+        price: 100,
+        net_pnl: 0,
+      },
+    ],
+    stop_updates: [{ time: 1700000900, after_target: 1, stop: 100 }],
+  };
+  w.setBacktestJob({
+    status: "completed",
+    message: "Complete",
+    result: {
+      source: "Delta demo history",
+      quote: "USD",
+      settings,
+      candles: 3,
+      warmup_candles: 600,
+      ambiguous_candles: 1,
+      actual_start: 1700000000,
+      actual_end: 1700000900,
+      summary: {
+        net_pnl: 20,
+        return_percent: 0.2,
+        trades: 1,
+        win_rate: 100,
+        max_drawdown_percent: 0,
+        fees: 0,
+        profit_factor: null,
+        gross_profit: 20,
+        ending_equity: 10020,
+      },
+      trades: [trade],
+      equity_curve: [
+        { time: 1700000000, equity: 10000 },
+        { time: 1700000900, equity: 10020 },
+      ],
+      assumptions: ["Conservative stops"],
+      rejected_entries: {},
+      reference_checks: [],
+    },
+  });
+  assert.equal(
+    d.getElementById("bt-overview-panel").classList.contains("hidden"),
+    false,
+  );
+  assert.equal(
+    d.getElementById("bt-trade-panel").classList.contains("hidden"),
+    true,
+  );
+  assert.equal(
+    d.getElementById("bt-methodology-panel").classList.contains("hidden"),
+    true,
+  );
+  d.getElementById("bt-tab-overview").dispatchEvent(
+    new w.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+  );
+  assert.equal(
+    d.getElementById("bt-tab-trades").getAttribute("aria-selected"),
+    "true",
+  );
+  assert.equal(
+    d.getElementById("bt-overview-panel").classList.contains("hidden"),
+    true,
+  );
+  d.querySelector("#bt-trade-rows .bt-trade-link").click();
+  assert.equal(d.getElementById("bt-trade-dialog").open, true);
+  assert.equal(d.querySelectorAll("#bt-trade-timeline li").length, 3);
+  assert.match(
+    d.querySelector("#bt-trade-timeline li:nth-child(2)").textContent,
+    /Stop updated after TP1/,
+  );
+  assert.equal(d.querySelector("#bt-trade-rows details"), null);
+  d.getElementById("bt-trade-close").click();
+  d.getElementById("bt-tab-methodology").click();
+  assert.equal(
+    d.getElementById("bt-methodology-panel").classList.contains("hidden"),
+    false,
+  );
+  assert.equal(
+    d.getElementById("bt-trade-panel").classList.contains("hidden"),
+    true,
+  );
+});
