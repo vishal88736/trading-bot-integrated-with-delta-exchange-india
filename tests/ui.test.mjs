@@ -68,14 +68,14 @@ async function settle() {
   for (let i = 0; i < 4; i++)
     await new Promise((resolve) => setImmediate(resolve));
 }
-async function dashboard(t, account = ready, status = initial) {
+async function dashboard(t, account = ready, status = initial, hash = "") {
   const css = readFileSync("bot/static/style.css", "utf8");
   const html = readFileSync("bot/static/index.html", "utf8").replace(
     "</head>",
     `<style>${css}</style></head>`,
   );
   const dom = new JSDOM(html, {
-    url: "http://127.0.0.1:8001",
+    url: `http://127.0.0.1:8001/${hash}`,
     runScripts: "outside-only",
   });
   t.after(() => dom.window.close());
@@ -115,6 +115,220 @@ async function dashboard(t, account = ready, status = initial) {
   await settle();
   return { w, document: w.document, calls, state };
 }
+
+test("navigation restores the selected page from the URL", async (t) => {
+  const { w, document: d } = await dashboard(t, ready, initial, "#backtest");
+  assert.equal(
+    d.getElementById("backtest-view").classList.contains("hidden"),
+    false,
+  );
+  d.getElementById("account-tab").click();
+  assert.equal(w.location.hash, "#account");
+  const restored = await dashboard(t, ready, initial, w.location.hash);
+  assert.equal(
+    restored.document
+      .getElementById("account-view")
+      .classList.contains("hidden"),
+    false,
+  );
+  assert.equal(
+    restored.document
+      .getElementById("account-tab")
+      .getAttribute("aria-current"),
+    "page",
+  );
+});
+
+test("settings tabs support keyboard navigation and reveal invalid hidden fields", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  w.openSettings();
+  d.getElementById("settings-strategy-tab").dispatchEvent(
+    new w.KeyboardEvent("keydown", { key: "ArrowRight" }),
+  );
+  assert.equal(
+    d.getElementById("settings-risk-tab").getAttribute("aria-selected"),
+    "true",
+  );
+  assert.equal(d.activeElement.id, "settings-risk-tab");
+  const input = d.getElementById("setting-fast_ema");
+  input.value = "0";
+  input.dispatchEvent(new w.Event("invalid", { cancelable: true }));
+  assert.equal(
+    d.getElementById("settings-strategy-tab").getAttribute("aria-selected"),
+    "true",
+  );
+  assert.equal(d.activeElement, input);
+  assert.equal(input.getAttribute("aria-invalid"), "true");
+  assert.ok(d.getElementById("form-error").textContent.length > 0);
+});
+
+test("risk previews update while editing without saving runner settings", async (t) => {
+  const { w, document: d, calls, state } = await dashboard(t);
+  w.openSettings("risk");
+  for (const [key, value] of [
+    ["contracts", 7],
+    ["tp0", 2],
+    ["tp1", 4],
+    ["tp2", 6],
+  ]) {
+    const input = d.getElementById(`setting-${key}`);
+    input.value = value;
+    input.dispatchEvent(new w.Event("input", { bubbles: true }));
+  }
+  assert.match(
+    d.getElementById("ratio-note").textContent,
+    /1.00R \/ 2.00R \/ 3.00R/,
+  );
+  assert.match(
+    d.getElementById("ratio-note").textContent,
+    /3 \/ 1 \/ 3 contracts/,
+  );
+  const contracts = d.getElementById("backtest-setting-contracts");
+  contracts.value = "7";
+  contracts.dispatchEvent(new w.Event("input", { bubbles: true }));
+  assert.match(
+    d.getElementById("backtest-risk-preview").textContent,
+    /3 \/ 1 \/ 3 contracts/,
+  );
+  assert.equal(state.settings.contracts, 4);
+  assert.ok(!calls.some((c) => c.url === "/api/settings"));
+});
+
+test("lowercase market symbols normalize in settings and backtest submissions", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  w.openSettings();
+  d.getElementById("setting-symbol").value = " ethusd ";
+  d.getElementById("settings-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  await settle();
+  assert.equal(
+    calls.find((c) => c.url === "/api/settings").body.symbol,
+    "ETHUSD",
+  );
+  d.getElementById("backtest-setting-symbol").value = " btcusd ";
+  d.getElementById("backtest-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  await settle();
+  assert.equal(
+    calls.find((c) => c.url === "/api/backtests" && c.body).body.settings
+      .symbol,
+    "BTCUSD",
+  );
+});
+
+test("invalid target order opens the risk tab before submitting any settings", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  w.openSettings();
+  d.getElementById("setting-tp0").value = "3";
+  d.getElementById("settings-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  assert.equal(
+    d.getElementById("settings-risk-tab").getAttribute("aria-selected"),
+    "true",
+  );
+  assert.equal(d.activeElement.id, "setting-tp0");
+  assert.match(d.getElementById("form-error").textContent, /increasing order/);
+  assert.ok(!calls.some((c) => c.url === "/api/settings"));
+});
+
+test("connection form Enter saves credentials rather than strategy settings", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  w.openSettings("connection");
+  d.getElementById("api-key").value = "fixture-key";
+  d.getElementById("api-secret").value = "fixture-secret";
+  d.getElementById("setting-fast_ema").value = "0";
+  d.getElementById("api-secret").dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "Enter",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  await settle();
+  assert.equal(calls.filter((c) => c.url === "/api/credentials").length, 1);
+  assert.ok(!calls.some((c) => c.url === "/api/settings"));
+  assert.equal(d.getElementById("api-key").value, "");
+  assert.equal(d.getElementById("api-secret").value, "");
+});
+
+test("backtest submission disables controls immediately and prevents duplicate requests", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  const original = w.fetch;
+  let release,
+    posts = 0;
+  w.fetch = (url, options) => {
+    if (url === "/api/backtests" && options?.method === "POST") {
+      posts += 1;
+      return new Promise((resolve) => {
+        release = resolve;
+      });
+    }
+    return original(url, options);
+  };
+  const submit = () =>
+    d
+      .getElementById("backtest-form")
+      .dispatchEvent(new w.Event("submit", { cancelable: true }));
+  submit();
+  submit();
+  assert.equal(posts, 1);
+  assert.equal(d.getElementById("backtest-run").disabled, true);
+  assert.match(
+    d.getElementById("backtest-run").textContent,
+    /Starting backtest/,
+  );
+  release({
+    ok: true,
+    json: async () => ({ status: "running", message: "Loading history" }),
+  });
+  await settle();
+  assert.match(d.getElementById("backtest-run").textContent, /Replaying/);
+  w.setBacktestJob({ status: "error", message: "Incomplete history" });
+  assert.equal(d.getElementById("backtest-run").disabled, false);
+});
+
+test("an old status response cannot unlock a newly started backtest", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  const original = w.fetch;
+  let release;
+  w.fetch = (url, options) =>
+    url === "/api/backtests" && !options?.method
+      ? new Promise((resolve) => {
+          release = resolve;
+        })
+      : original(url, options);
+  const stale = w.pollBacktest();
+  d.getElementById("backtest-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  await settle();
+  release({
+    ok: true,
+    json: async () => ({ status: "idle", message: "Old snapshot" }),
+  });
+  await stale;
+  assert.equal(d.getElementById("backtest-run").disabled, true);
+  assert.match(d.getElementById("backtest-run").textContent, /Replaying/);
+});
+
+test("backtest date errors focus the field without starting a job", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  d.getElementById("backtest-tab").click();
+  d.getElementById("backtest-end").value =
+    d.getElementById("backtest-start").value;
+  d.getElementById("backtest-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  assert.match(
+    d.getElementById("backtest-status").textContent,
+    /end date after the start/,
+  );
+  assert.equal(d.activeElement.id, "backtest-end");
+  assert.ok(!calls.some((c) => c.url === "/api/backtests" && c.body));
+});
 
 test("account navigation shows actual exchange wallet assets separately from bot P&L", async (t) => {
   const { document: d } = await dashboard(t);
@@ -188,6 +402,11 @@ test("a paused paper position remains visible in Account without inventing excha
   assert.match(
     d.getElementById("paper-position-status").textContent,
     /runner paused/,
+  );
+  assert.match(d.getElementById("status-value").textContent, /Paused/);
+  assert.match(
+    d.getElementById("start-button").textContent,
+    /Resume paper run/,
   );
   assert.match(
     d.getElementById("account-notice").textContent,

@@ -4,7 +4,9 @@ let activeView = "automation",
   accountPolling = false;
 let backtestBase = null,
   backtestRunning = false,
-  backtestPolling = false;
+  backtestPolling = false,
+  backtestSubmitting = false,
+  backtestRevision = 0;
 let backtestResult = null,
   backtestPage = 0,
   backtestResultTab = "overview";
@@ -16,8 +18,12 @@ const dateTime = (value) => {
     : new Date(value);
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
 };
-function showView(view) {
+function showView(view, remember = true) {
+  if (!["automation", "account", "backtest"].includes(view))
+    view = "automation";
   activeView = view;
+  if (remember && location.hash !== `#${view}`)
+    history.replaceState(null, "", `#${view}`);
   for (const name of ["automation", "account", "backtest"])
     $(`${name}-view`).classList.toggle("hidden", name !== view);
   for (const [name, id] of [
@@ -345,6 +351,7 @@ function updateBacktestSummary() {
   const value = (key) => $(`backtest-setting-${key}`).value;
   $("backtest-config-summary").textContent =
     `EMA ${value("fast_ema")} / ${value("slow_ema")} · CMO ${value("cmo_length")} · ATR ${value("atr_length")} · ${value("contracts")} contracts · ${$("backtest-fee").value} bps fee`;
+  updateRiskPreview("backtest-setting-", "backtest-risk-preview");
 }
 function selectBacktestSettings(tab) {
   document.querySelectorAll("[data-bt-settings]").forEach((button) => {
@@ -378,11 +385,15 @@ $("backtest-settings-done").onclick = () => {
   updateBacktestSummary();
   $("backtest-settings-dialog").close();
 };
-function revealInvalidBacktestSetting(input) {
+function revealInvalidBacktestSetting(
+  input,
+  message = input.validationMessage,
+) {
   const panel = input.closest("[data-bt-settings-panel]");
   if (!panel) return;
   openBacktestSettings(panel.dataset.btSettingsPanel);
-  $("backtest-settings-error").textContent = input.validationMessage;
+  $("backtest-settings-error").textContent = message;
+  input.setAttribute("aria-invalid", "true");
   input.focus();
 }
 $("backtest-form").addEventListener(
@@ -396,6 +407,9 @@ $("backtest-form").addEventListener(
   true,
 );
 $("backtest-settings-dialog").addEventListener("input", updateBacktestSummary);
+$("backtest-form").addEventListener("input", (event) =>
+  event.target.removeAttribute("aria-invalid"),
+);
 $("backtest-settings-dialog").addEventListener("keydown", (event) => {
   if (event.key === "Enter" && event.target.matches("input")) {
     event.preventDefault();
@@ -418,27 +432,8 @@ function selectBacktestResult(tab) {
   if (tab === "overview" && backtestResult)
     drawEquity(backtestResult.equity_curve);
 }
-function wireBacktestTabs(selector, dataKey, onSelect) {
-  const buttons = [...document.querySelectorAll(selector)];
-  buttons.forEach((button, index) => {
-    button.onclick = () => onSelect(button.dataset[dataKey]);
-    button.onkeydown = (event) => {
-      const offsets = {
-        ArrowRight: (index + 1) % buttons.length,
-        ArrowLeft: (index + buttons.length - 1) % buttons.length,
-        Home: 0,
-        End: buttons.length - 1,
-      };
-      if (!(event.key in offsets)) return;
-      event.preventDefault();
-      const next = buttons[offsets[event.key]];
-      onSelect(next.dataset[dataKey]);
-      next.focus();
-    };
-  });
-}
-wireBacktestTabs("[data-bt-settings]", "btSettings", selectBacktestSettings);
-wireBacktestTabs("[data-bt-result]", "btResult", selectBacktestResult);
+wireTabs("[data-bt-settings]", "btSettings", selectBacktestSettings);
+wireTabs("[data-bt-result]", "btResult", selectBacktestResult);
 selectBacktestSettings("strategy");
 selectBacktestResult("overview");
 function copyBacktestSettings() {
@@ -493,15 +488,8 @@ for (const id of ["backtest-start", "backtest-end"])
   );
 $("backtest-form").onsubmit = async (event) => {
   event.preventDefault();
-  if (!backtestBase) return;
-  const settings = structuredClone(backtestBase);
-  for (const [, key, , kind] of fields) {
-    const input = $(`backtest-setting-${key}`);
-    if (!input) continue;
-    const value = kind === "number" ? Number(input.value) : input.value;
-    if (key.startsWith("tp")) settings.tp_atr[Number(key[2])] = value;
-    else settings[key] = value;
-  }
+  if (!backtestBase || backtestSubmitting || backtestRunning) return;
+  const settings = readSettings(backtestBase, "backtest-setting-");
   const request = {
     settings,
     source: $("backtest-source").value,
@@ -511,26 +499,91 @@ $("backtest-form").onsubmit = async (event) => {
     fee_bps: Number($("backtest-fee").value),
     slippage_bps: Number($("backtest-slippage").value),
   };
+  const issue = settingsIssue(settings);
+  if (issue) {
+    const input = $(`backtest-setting-${issue.key}`);
+    showBacktestError(issue.message, input);
+    return;
+  }
+  if (
+    !Number.isFinite(request.start) ||
+    !Number.isFinite(request.end) ||
+    request.end <= request.start
+  ) {
+    showBacktestError(
+      "Choose an end date after the start date.",
+      $("backtest-end"),
+    );
+    return;
+  }
+  if (request.end > Date.now() / 1000) {
+    showBacktestError("Choose a historical end time.", $("backtest-end"));
+    return;
+  }
+  if (request.end - request.start > 366 * 86400) {
+    showBacktestError(
+      "Choose a period up to one year (366 days).",
+      $("backtest-start"),
+    );
+    return;
+  }
+  if (request.end - request.start < 2 * timeframeSeconds[settings.timeframe]) {
+    showBacktestError(
+      "Choose a period containing at least two signal candles.",
+      $("backtest-start"),
+    );
+    return;
+  }
+  if (request.slippage_bps > settings.max_entry_slippage_bps) {
+    showBacktestError(
+      "Test slippage exceeds the maximum entry slippage in Risk & targets.",
+      $("backtest-slippage"),
+    );
+    return;
+  }
+  backtestSubmitting = true;
+  backtestRevision += 1;
+  updateBacktestControls();
+  $("backtest-status").textContent = "Starting your backtest…";
+  $("backtest-status").classList.remove("error");
   try {
     setBacktestJob(await api("backtests", request));
   } catch (error) {
-    $("backtest-status").textContent = error.message;
-    $("backtest-status").classList.add("error");
+    showBacktestError(error.message);
+  } finally {
+    backtestSubmitting = false;
+    updateBacktestControls();
   }
 };
+function showBacktestError(message, input) {
+  $("backtest-status").textContent = message;
+  $("backtest-status").classList.add("error");
+  if (input) {
+    input.setAttribute("aria-invalid", "true");
+    if (input.closest("[data-bt-settings-panel]"))
+      revealInvalidBacktestSetting(input, message);
+    else input.focus();
+  }
+}
+function updateBacktestControls() {
+  const busy = backtestSubmitting || backtestRunning;
+  $("backtest-status").classList.toggle("is-running", busy);
+  $("backtest-form").setAttribute("aria-busy", String(busy));
+  for (const control of $("backtest-form").querySelectorAll(
+    "input,select,button",
+  ))
+    control.disabled = busy;
+  $("backtest-run").textContent = backtestSubmitting
+    ? "Starting backtest…"
+    : backtestRunning
+      ? "Replaying history…"
+      : "Run backtest ▶";
+}
 function setBacktestJob(job) {
   backtestRunning = job.status === "running";
   $("backtest-status").textContent = job.message;
   $("backtest-status").classList.toggle("error", job.status === "error");
-  $("backtest-status").classList.toggle("is-running", backtestRunning);
-  $("backtest-form").setAttribute("aria-busy", String(backtestRunning));
-  for (const control of $("backtest-form").querySelectorAll(
-    "input,select,button",
-  ))
-    control.disabled = backtestRunning;
-  $("backtest-run").textContent = backtestRunning
-    ? "Replaying history…"
-    : "Run backtest ▶";
+  updateBacktestControls();
   if (backtestRunning || job.status === "error") {
     backtestResult = null;
     $("backtest-results").classList.add("hidden");
@@ -547,13 +600,16 @@ function setBacktestJob(job) {
   if (job.result) renderBacktest(job.result);
 }
 async function pollBacktest() {
-  if (backtestPolling) return;
+  if (backtestPolling || backtestSubmitting) return;
   backtestPolling = true;
+  const revision = backtestRevision;
   try {
-    setBacktestJob(await api("backtests"));
+    const job = await api("backtests");
+    if (revision === backtestRevision) setBacktestJob(job);
   } catch {
-    $("backtest-status").textContent =
-      "Lost connection to the replay. Reconnecting…";
+    if (revision === backtestRevision)
+      $("backtest-status").textContent =
+        "Lost connection to the replay. Reconnecting…";
   } finally {
     backtestPolling = false;
   }
@@ -850,6 +906,9 @@ window.addEventListener("resize", () => {
 });
 refreshAccount();
 pollBacktest();
+const viewFromHash = () => location.hash.slice(1) || "automation";
+showView(viewFromHash(), false);
+window.addEventListener("hashchange", () => showView(viewFromHash(), false));
 setInterval(refreshAccount, 5000);
 setInterval(() => {
   if (backtestRunning) pollBacktest();

@@ -1359,6 +1359,12 @@ footer button {
   font-size: 16px;
   min-height: 44px;
 }
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"] {
+  border-color: #a83d31;
+  outline: 2px solid #a83d3133;
+  outline-offset: 1px;
+}
 .dialog-tabs button {
   font-size: 14px;
 }

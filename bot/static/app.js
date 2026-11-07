@@ -46,18 +46,26 @@ function render(data) {
     quote = data.quote || "quote";
   $("status-value").replaceChildren(
     document.createTextNode(
-      data.running ? "Running " : data.error ? "Paused " : "Ready ",
+      data.running ? "Running " : data.error || p ? "Paused " : "Ready ",
     ),
   );
   const pill = document.createElement("small");
   pill.className = `pill ${data.running ? "active" : "muted"}`;
-  pill.textContent = data.running ? "ACTIVE" : data.error ? "CHECK" : "IDLE";
+  pill.textContent = data.running
+    ? "ACTIVE"
+    : data.error
+      ? "CHECK"
+      : p
+        ? "PAUSED"
+        : "IDLE";
   $("status-value").append(pill);
   $("status-sub").textContent = data.error
     ? "Needs your attention"
     : data.running
       ? `${s.poll_seconds}s polling · ${s.mode === "demo" ? "demo orders" : "simulated fills"}`
-      : "Waiting for you to start";
+      : p
+        ? "Position saved · monitoring paused"
+        : "Waiting for you to start";
   $("symbol-label").textContent = s.symbol;
   $("market-symbol").textContent = s.symbol;
   $("timeframe-label").textContent = s.timeframe;
@@ -86,12 +94,16 @@ function render(data) {
   $("flow-tp").textContent = `${s.tp_atr.join(" / ")} × ATR`;
   $("flow-execution").textContent =
     `${s.mode === "demo" ? "Demo" : "Paper"} execution`;
-  $("flow-ready").textContent = data.running ? "RUNNING" : "READY";
+  $("flow-ready").textContent = data.running
+    ? "RUNNING"
+    : p
+      ? "PAUSED"
+      : "READY";
   $("ladder-initial").textContent = `SL at ${s.sl_atr} × ATR`;
   $("start-button").disabled = data.running;
   $("stop-button").disabled = !data.running;
   $("start-button").lastChild.textContent =
-    ` Start ${s.mode === "demo" ? "demo" : "paper"} run`;
+    ` ${p ? "Resume" : "Start"} ${s.mode === "demo" ? "demo" : "paper"} run`;
   for (let i = 0; i < 4; i++) {
     const reached = Boolean(p && i <= p.stage);
     $(`ladder-${i}`).classList.toggle("reached", reached);
@@ -290,6 +302,12 @@ const timeframes = [
   "6h",
   "1d",
 ];
+const timeframeSeconds = Object.fromEntries(
+  timeframes.map((value) => [
+    value,
+    parseInt(value, 10) * { m: 60, h: 3600, d: 86400 }[value.at(-1)],
+  ]),
+);
 const fields = [
   ["strategy", "mode", "Execution mode", ["paper", "demo"]],
   ["strategy", "symbol", "Market symbol", "text"],
@@ -377,17 +395,115 @@ for (const [section, key, title, kind, min, max, step] of fields) {
     }
   }
   input.required = true;
+  if (key === "symbol") {
+    input.placeholder = "BTCUSD or ETHUSD";
+    input.maxLength = 60;
+    input.autocomplete = "off";
+    input.spellcheck = false;
+    input.addEventListener("blur", () => {
+      input.value = input.value.trim().toUpperCase();
+    });
+  }
+  input.addEventListener("input", () => input.removeAttribute("aria-invalid"));
   label.append(input);
   $(`${section}-inputs`).append(label);
 }
 function selectTab(name) {
-  document
-    .querySelectorAll(".dialog-tabs button")
-    .forEach((button) =>
-      button.classList.toggle("selected", button.dataset.tab === name),
-    );
+  document.querySelectorAll("#settings-dialog [data-tab]").forEach((button) => {
+    const active = button.dataset.tab === name;
+    button.classList.toggle("selected", active);
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  });
   for (const tab of ["strategy", "risk", "connection"])
     $(`${tab}-fields`).classList.toggle("hidden", tab !== name);
+  $("save-settings").classList.toggle("hidden", name === "connection");
+}
+function wireTabs(selector, dataKey, onSelect) {
+  const buttons = [...document.querySelectorAll(selector)];
+  buttons.forEach((button, index) => {
+    button.onclick = () => onSelect(button.dataset[dataKey]);
+    button.onkeydown = (event) => {
+      const offsets = {
+        ArrowRight: (index + 1) % buttons.length,
+        ArrowLeft: (index + buttons.length - 1) % buttons.length,
+        Home: 0,
+        End: buttons.length - 1,
+      };
+      if (!(event.key in offsets)) return;
+      event.preventDefault();
+      const next = buttons[offsets[event.key]];
+      onSelect(next.dataset[dataKey]);
+      next.focus();
+    };
+  });
+}
+function readSettings(base, prefix = "setting-") {
+  const settings = structuredClone(base);
+  for (const [, key, , kind] of fields) {
+    const input = $(`${prefix}${key}`);
+    if (!input) continue;
+    if (key === "symbol") input.value = input.value.trim().toUpperCase();
+    const value = kind === "number" ? Number(input.value) : input.value;
+    if (key.startsWith("tp")) settings.tp_atr[Number(key[2])] = value;
+    else settings[key] = value;
+  }
+  return settings;
+}
+function settingsIssue(s) {
+  if (!/^[A-Z0-9_-]{3,60}$/.test(s.symbol))
+    return {
+      key: "symbol",
+      message: "Enter a Delta market symbol, such as BTCUSD or ETHUSD.",
+    };
+  if (timeframeSeconds[s.higher_timeframe] <= timeframeSeconds[s.timeframe])
+    return {
+      key: "higher_timeframe",
+      message: "Higher timeframe must be larger than the signal timeframe.",
+    };
+  if (s.fast_ema >= s.slow_ema)
+    return {
+      key: "fast_ema",
+      message: "Fast EMA must be shorter than slow EMA.",
+    };
+  if (!(
+    0 < s.tp_atr[0] &&
+    s.tp_atr[0] < s.tp_atr[1] &&
+    s.tp_atr[1] < s.tp_atr[2]
+  ))
+    return {
+      key: "tp0",
+      message: "Set targets in increasing order: TP1 < TP2 < TP3.",
+    };
+  if (s.contracts > s.max_contracts)
+    return {
+      key: "max_contracts",
+      message: "Maximum position contracts must cover the contracts per trade.",
+    };
+  return null;
+}
+function updateRiskPreview(prefix, id) {
+  const value = (key) => Number($(`${prefix}${key}`).value);
+  const stop = value("sl_atr"),
+    targets = [0, 1, 2].map((i) => value(`tp${i}`)),
+    contracts = value("contracts");
+  const valid =
+    stop > 0 &&
+    targets[0] > 0 &&
+    targets[1] > targets[0] &&
+    targets[2] > targets[1] &&
+    Number.isInteger(contracts) &&
+    contracts >= 4;
+  $(id).textContent = valid
+    ? `Target reward/risk: ${targets.map((n) => `${number(n / stop)}R`).join(" / ")}. Partial exits: ${Math.floor(contracts / 2)} / ${Math.floor(contracts / 4)} / ${contracts - Math.floor(contracts / 2) - Math.floor(contracts / 4)} contracts.`
+    : "Set a positive stop, increasing targets, and at least four contracts to preview this trade.";
+}
+function revealSettingsError(input, message) {
+  const section = input.closest(".form-section");
+  if (section) selectTab(section.id.replace("-fields", ""));
+  $("form-error").textContent = message;
+  input.setAttribute("aria-invalid", "true");
+  input.focus();
 }
 function openSettings(tab = "strategy") {
   if (!current) return;
@@ -400,8 +516,7 @@ function openSettings(tab = "strategy") {
     ? "Demo credentials are saved. Fields stay empty to protect your secrets."
     : "No demo credentials saved. Paper mode works without them.";
   $("form-error").textContent = "";
-  $("ratio-note").textContent =
-    `With your saved settings: TP reward/risk = ${s.tp_atr.map((n) => `${number(n / s.sl_atr, 2)}R`).join(" / ")}. Targets split ${Math.floor(s.contracts / 2)} / ${Math.floor(s.contracts / 4)} / ${s.contracts - Math.floor(s.contracts / 2) - Math.floor(s.contracts / 4)} contracts.`;
+  updateRiskPreview("setting-", "ratio-note");
   selectTab(tab);
   $("settings-dialog").showModal();
 }
@@ -410,9 +525,18 @@ $("strategy-tab").onclick = () => openSettings();
 $("chart-settings").onclick = () => openSettings();
 $("connection-button").onclick = () => openSettings("connection");
 $("close-settings").onclick = () => $("settings-dialog").close();
-document
-  .querySelectorAll(".dialog-tabs button")
-  .forEach((button) => (button.onclick = () => selectTab(button.dataset.tab)));
+wireTabs("#settings-dialog [data-tab]", "tab", selectTab);
+$("settings-form").addEventListener("input", () =>
+  updateRiskPreview("setting-", "ratio-note"),
+);
+$("settings-form").addEventListener(
+  "invalid",
+  (event) => {
+    event.preventDefault();
+    revealSettingsError(event.target, event.target.validationMessage);
+  },
+  true,
+);
 $("activity-tab").onclick = () =>
   $("activity").scrollIntoView({
     behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -421,17 +545,24 @@ $("activity-tab").onclick = () =>
   });
 $("overview-tab").onclick = () =>
   window.scrollTo({ top: 0, behavior: "smooth" });
+let settingsSaving = false;
 $("settings-form").onsubmit = async (event) => {
   event.preventDefault();
-  const s = structuredClone(current.settings);
-  for (const [, key, , kind] of fields) {
-    const value =
-      kind === "number"
-        ? Number($(`setting-${key}`).value)
-        : $(`setting-${key}`).value;
-    if (key.startsWith("tp")) s.tp_atr[Number(key[2])] = value;
-    else s[key] = value;
+  if (!$("connection-fields").classList.contains("hidden")) {
+    $("save-connection").click();
+    return;
   }
+  if (settingsSaving) return;
+  const s = readSettings(current.settings);
+  const issue = settingsIssue(s);
+  if (issue) {
+    revealSettingsError($(`setting-${issue.key}`), issue.message);
+    return;
+  }
+  settingsSaving = true;
+  $("save-settings").disabled = true;
+  $("save-settings").textContent = "Saving settings…";
+  $("form-error").textContent = "";
   try {
     await api("settings", s);
     $("settings-dialog").close();
@@ -439,9 +570,35 @@ $("settings-form").onsubmit = async (event) => {
     await refresh();
   } catch (error) {
     $("form-error").textContent = error.message;
+  } finally {
+    settingsSaving = false;
+    $("save-settings").disabled = false;
+    $("save-settings").textContent = "Save settings ↗";
   }
 };
+let connectionSaving = false;
+$("connection-fields").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches("input")) {
+    event.preventDefault();
+    $("save-connection").click();
+  }
+});
 $("save-connection").onclick = async () => {
+  if (connectionSaving) return;
+  for (const id of ["api-key", "api-secret"]) {
+    if (!$(id).value.trim()) {
+      revealSettingsError(
+        $(id),
+        "Enter both the demo API key and its matching secret.",
+      );
+      return;
+    }
+  }
+  connectionSaving = true;
+  $("form-error").textContent = "";
+  $("save-connection").disabled = true;
+  $("save-connection").textContent = "Saving connection…";
+  $("test-connection").disabled = true;
   try {
     await api("credentials", {
       api_key: $("api-key").value,
@@ -450,12 +607,17 @@ $("save-connection").onclick = async () => {
     $("api-key").value = "";
     $("api-secret").value = "";
     $("credential-status").textContent =
-      "Demo credentials saved securely on this computer.";
+      "Demo credentials saved on this computer.";
     toast("Demo connection saved.");
     await refresh();
     document.dispatchEvent(new Event("credentials-saved"));
   } catch (error) {
     $("form-error").textContent = error.message;
+  } finally {
+    connectionSaving = false;
+    $("save-connection").disabled = false;
+    $("save-connection").textContent = "Save demo connection";
+    $("test-connection").disabled = false;
   }
 };
 async function start() {

@@ -683,6 +683,11 @@
                 remainder.
               </p>
               <div id="backtest-risk-inputs" class="form-grid"></div>
+              <p
+                id="backtest-risk-preview"
+                class="ratio-note"
+                aria-live="polite"
+              ></p>
             </section>
             <section
               id="bt-settings-costs-panel"
@@ -888,10 +893,11 @@
               <p id="bt-rejections" class="form-note"></p>
             </div>
             <details class="data-panel bt-validation-details">
-              <summary>Independent statistics checks</summary>
+              <summary>Validation checks</summary>
               <p class="form-note">
-                These tools recalculate metrics from the trade ledger. They do
-                not independently replay strategy orders.
+                Statistics checks use this trade ledger. Backtrader checks
+                bracket execution on controlled price paths. Expand its coverage
+                details to see what is tested.
               </p>
               <div id="bt-reference-checks"></div>
             </details>
@@ -945,27 +951,67 @@
           ×
         </button>
       </div>
-      <div class="dialog-tabs">
-        <button class="selected" data-tab="strategy">Strategy</button
-        ><button data-tab="risk">Risk & targets</button
-        ><button data-tab="connection">Connection</button>
+      <div class="dialog-tabs" role="tablist" aria-label="Settings sections">
+        <button
+          id="settings-strategy-tab"
+          class="selected"
+          data-tab="strategy"
+          role="tab"
+          aria-selected="true"
+          aria-controls="strategy-fields"
+        >
+          Strategy</button
+        ><button
+          id="settings-risk-tab"
+          data-tab="risk"
+          role="tab"
+          aria-selected="false"
+          aria-controls="risk-fields"
+          tabindex="-1"
+        >
+          Risk & targets</button
+        ><button
+          id="settings-connection-tab"
+          data-tab="connection"
+          role="tab"
+          aria-selected="false"
+          aria-controls="connection-fields"
+          tabindex="-1"
+        >
+          Connection
+        </button>
       </div>
       <form id="settings-form">
-        <div id="strategy-fields" class="form-section">
+        <div
+          id="strategy-fields"
+          class="form-section"
+          role="tabpanel"
+          aria-labelledby="settings-strategy-tab"
+        >
           <p class="form-note">
             Changes apply to the next run. Pause and resolve active trades
             before editing.
           </p>
           <div id="strategy-inputs" class="form-grid"></div>
         </div>
-        <div id="risk-fields" class="form-section hidden">
+        <div
+          id="risk-fields"
+          class="form-section hidden"
+          role="tabpanel"
+          aria-labelledby="settings-risk-tab"
+        >
           <p class="form-note">
             TP1 → SL at entry. TP2 → SL at TP1. TP3 closes the remainder.
           </p>
           <div id="risk-inputs" class="form-grid"></div>
-          <div class="ratio-note" id="ratio-note"></div>
+          <div class="ratio-note" id="ratio-note" aria-live="polite"></div>
         </div>
-        <div id="connection-fields" class="form-section hidden">
+        <div
+          id="connection-fields"
+          class="form-section hidden"
+          role="tabpanel"
+          aria-labelledby="settings-connection-tab"
+        >
           <div class="demo-card">
             <span class="node-icon blue">◇</span>
             <div>
@@ -1010,7 +1056,7 @@
         <div id="form-error" class="form-error" role="alert"></div>
         <div class="dialog-footer">
           <span>Settings are stored locally.</span
-          ><button class="primary" type="submit">
+          ><button id="save-settings" class="primary" type="submit">
             Save settings <span>↗</span>
           </button>
         </div>
