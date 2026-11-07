@@ -1957,6 +1957,24 @@ td small {
   line-height: 1.7;
   font-size: 13px;
 }
+.reference-check details {
+  width: 100%;
+  min-width: 0;
+  font-size: 13px;
+  color: #53645b;
+  line-height: 1.7;
+}
+.reference-check summary {
+  cursor: pointer;
+  color: #245e46;
+}
+.reference-check details p {
+  margin-top: 8px;
+}
+.reference-check details ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
 .table-pagination {
   display: flex;
   align-items: center;

@@ -33,7 +33,7 @@ An open paper trade also appears here under **Your paper position**, including w
 
 ## Free backtesting, up to one year
 
-Open **Backtest** and choose a date range or the **1 year** preset. Select either **Delta India public market** history (default) or **Delta demo** history. Both use free public candle endpoints with no API key or paid data dependency. Account credentials are never sent to either reference repository, and backtesting never submits exchange orders.
+Open **Backtest** and choose a date range or the **1 year** preset. Select either **Delta India public market** history (default) or **Delta demo** history. Both use free public candle endpoints with no API key or paid data dependency. Account credentials are never sent to the reference workers, and backtesting never submits exchange orders.
 
 Choose market, signal/higher timeframes, strategy and dates on the setup card. Open **Strategy settings** for indicator parameters, risk/targets and trading costs. These controls are independent of saved runner settings and can be changed while the runner is active. Set initial quote capital, then select **Run backtest**. Results are organized into **Overview**, **Trades**, and **Methodology** tabs; **View trade** opens its exit and stop-update timeline. A full year is supported even on the 1-minute timeframe; data is fetched in windows within Delta's 2000-candle API limit. The application refuses missing or gapped history instead of reporting a shorter period as a full-year test.
 
@@ -43,9 +43,13 @@ Signals use closed candles and enter on the next candle open with slippage. The 
 
 Funding, tax, liquidation, order-book liquidity and intrabar price ordering are not modeled. Historical target touches differ from the demo runner's polling behavior. The realized-loss limit also applies during replay; increase it deliberately in the test form if you want the strategy to keep taking entries after that simulated loss threshold.
 
-### Checking results with your two reference repositories
+### Checking results with the reference repositories
 
 The optional checks use the actual statistics implementations from [PyBacktestPro](https://github.com/raviwijerathna1/PyBacktestPro) and [trading-strategy-backtesting-suite](https://github.com/Trading-Backtesting/trading-strategy-backtesting-suite). They recalculate drawdown, trade count and win rate; PyBacktestPro also checks ledger P&L and fees, while the suite checks final equity and return. They consume our trade ledger/equity, so **agreement is a statistics check, not an independent replay of strategy orders or proof of fill realism**. Their profit-factor definitions differ, so that field is not claimed as comparable.
+
+[Backtrader](https://github.com/mementum/backtrader) adds **18 independent broker execution scenarios**. Our engine and Backtrader receive the same controlled OHLC paths and a fixed entry signal. Backtrader independently calculates levels and quantities, then submits actual simulated Market, Stop and Limit/OCO orders to its unmodified broker. The comparison checks next-open entries, long/short TP1/TP2 stop advances, partial quantities, initial stops, gap fills, fees, market slippage, tick rounding, contract multipliers, final settlement, and cancellation of protective orders after closing. Fault-injection tests deliberately break our stop ladder and allocations to verify that the checker detects both defects.
+
+The Methodology tab labels this **Bracket checks**, with expandable coverage details. These are controlled execution tests, **not an independent replay of your indicator signals or the selected historical period**. Target scenarios use zero slippage because native limit fills differ from market exits at a target. Entry-candle exit activation, multiple targets or newly advanced stops touched within the same candle, funding, liquidation, and live exchange behavior are outside this comparison. Existing replay tests separately exercise the dashboard's conservative same-candle policy.
 
 ```bash
 uv sync --frozen --group research
@@ -59,7 +63,14 @@ The setup helper downloads reviewed, pinned commits under ignored `.runtime/refe
 uv run --frozen --group research python scripts/check_backtest_references.py /path/to/backtest.json
 ```
 
-Reviewed commits: PyBacktestPro `cf276f47ea664a91b1579d41a0ca5e5a59a8239e`, suite `ceaceb1858d22de9a51c0e19f568961cc4195160`. The first repository has no license file; the suite contains components with differing upstream licenses. Their source is not vendored or redistributed in this project. Checks run in a separate process with `DELTA_*` environment variables removed.
+You can run just the bracket checks without fetching market data or installing the statistics dependencies:
+
+```bash
+uv run --frozen python scripts/setup_references.py --only Backtrader
+uv run --frozen python scripts/check_backtest_references.py --only Backtrader
+```
+
+Reviewed commits: PyBacktestPro `cf276f47ea664a91b1579d41a0ca5e5a59a8239e`, suite `ceaceb1858d22de9a51c0e19f568961cc4195160`, Backtrader `b853d7c90b6721476eb5a5ea3135224e33db1f14` (version `1.9.78.123`). The first repository has no license file; the suite contains components with differing upstream licenses; Backtrader carries GPL-3.0. Their source is not vendored or redistributed in this project. Checks run in a separate process with `DELTA_*` environment variables removed.
 
 ## Your stop-loss ladder
 
@@ -110,7 +121,7 @@ npm test
 uv build --no-sources
 ```
 
-Tests cover account parsing/stale data/credential redaction, historical pagination, replay fills/costs/risk limits, long/short target ladders, rolling-window indicator parity, restart recovery, ambiguous writes, signing and local API controls. DOM tests exercise navigation, account currency separation, independent backtest settings, one-year presets and large equity curves. GitHub Actions tests Python 3.12, 3.13 and 3.14, plus UI DOM behavior on Node 26, without credentials or exchange orders.
+Tests cover account parsing/stale data/credential redaction, historical pagination, replay fills/costs/risk limits, long/short target ladders, rolling-window indicator parity, restart recovery, ambiguous writes, signing and local API controls. DOM tests exercise navigation, account currency separation, independent backtest settings, one-year presets and large equity curves. GitHub Actions downloads the pinned Backtrader reference and tests its independent broker scenarios and fault detection on Python 3.12, 3.13 and 3.14, plus UI DOM behavior on Node 26, without credentials or exchange orders.
 
 Public market reads and a full-year BTCUSD five-minute replay (105,120 test candles, 365 days) were verified during implementation, with both reference statistics checks passing. A seven-day demo-data replay was also checked. These are completed historical simulations, not proof of profitability or demo execution. No demo account credentials were available, so live authenticated balances, demo orders and stop amendments remain unverified. Browser visual QA was unavailable; DOM/API checks do not establish visual rendering.
 

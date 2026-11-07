@@ -350,7 +350,7 @@ class Backtests:
                 from bot.reference_checks import validate
 
                 self.progress(
-                    "Cross-checking statistics against the optional reference repositories"
+                    "Checking reference statistics and independent bracket execution scenarios"
                 )
                 result["reference_checks"] = validate(result, self.reference_root)
             with self.lock:

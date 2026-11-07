@@ -290,6 +290,16 @@ test("results render a large equity series without argument limits and paginate 
         status: "passed",
         checks: { trades: { passed: true } },
       },
+      {
+        name: "Backtrader",
+        url: "https://github.com/mementum/backtrader",
+        kind: "execution_scenarios",
+        status: "passed",
+        message: "18/18 controlled broker scenarios agree.",
+        scope:
+          "Controlled bracket execution; not a replay of this strategy or period.",
+        limitations: ["Entry-candle activation timing is not compared."],
+      },
     ],
   };
   w.setBacktestJob({ status: "completed", message: "Complete", result });
@@ -301,6 +311,16 @@ test("results render a large equity series without argument limits and paginate 
   assert.match(
     d.getElementById("bt-reference-checks").textContent,
     /Metrics agree/,
+  );
+  const execution = [...d.querySelectorAll(".reference-check")].find(
+    (row) => row.querySelector("a").textContent === "Backtrader",
+  );
+  assert.match(execution.textContent, /Bracket checks passed/);
+  assert.doesNotMatch(execution.textContent, /Metrics agree/);
+  assert.match(execution.querySelector("details").textContent, /not a replay/);
+  assert.match(
+    execution.querySelector("details li").textContent,
+    /activation timing/,
   );
   assert.ok(
     d.querySelector("#equity-chart polyline").getAttribute("points").split(" ")

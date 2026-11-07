@@ -605,7 +605,9 @@ function renderBacktest(result) {
     const status = document.createElement("strong");
     status.textContent =
       check.status === "passed"
-        ? "Metrics agree ✓"
+        ? check.kind === "execution_scenarios"
+          ? "Bracket checks passed ✓"
+          : "Metrics agree ✓"
         : check.status.replaceAll("_", " ");
     status.className = check.status === "passed" ? "positive" : "negative";
     const detail = document.createElement("p");
@@ -618,6 +620,22 @@ function renderBacktest(result) {
         )
         .join(" · ");
     row.append(name, status, detail);
+    if (check.kind === "execution_scenarios") {
+      const coverage = document.createElement("details");
+      const title = document.createElement("summary");
+      title.textContent = "What this check covers";
+      const scope = document.createElement("p");
+      scope.textContent = check.scope;
+      coverage.append(title, scope);
+      const limits = document.createElement("ul");
+      for (const text of check.limitations || []) {
+        const item = document.createElement("li");
+        item.textContent = text;
+        limits.append(item);
+      }
+      if (limits.childElementCount) coverage.append(limits);
+      row.append(coverage);
+    }
     $("bt-reference-checks").append(row);
   }
   $("bt-assumptions").replaceChildren();

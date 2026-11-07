@@ -1,8 +1,8 @@
-"""Optional offline statistics cross-checks against the two user-selected repositories.
+"""Optional statistics and execution checks against the user-selected repositories.
 
 No source is vendored. Only pinned, unmodified local checkouts are loaded. The
-statistics are independently calculated from our exported fills/equity, not a
-second simulation of strategy orders.
+statistics readers consume our exported fills/equity. Backtrader separately
+executes controlled bracket scenarios using its own broker.
 """
 
 import importlib
@@ -26,6 +26,11 @@ REFERENCES = (
         "trading-strategy-backtesting-suite",
         "https://github.com/Trading-Backtesting/trading-strategy-backtesting-suite",
         "ceaceb1858d22de9a51c0e19f568961cc4195160",
+    ),
+    (
+        "Backtrader",
+        "https://github.com/mementum/backtrader",
+        "b853d7c90b6721476eb5a5ea3135224e33db1f14",
     ),
 )
 CHECK_LOCK = threading.Lock()
@@ -58,12 +63,14 @@ def compare(actual, expected):
     }
 
 
-def validate(result, root):
+def validate(result, root, only=None):
     """Run optional third-party readers away from the trading server's process."""
+    if only is not None and (not only or set(only) - {name for name, _, _ in REFERENCES}):
+        raise ValueError("Choose a known reference")
     environment = {key: value for key, value in os.environ.items() if not key.startswith("DELTA_")}
     try:
         process = subprocess.run(
-            [sys.executable, str(Path(__file__).resolve()), str(root.resolve())],
+            [sys.executable, str(Path(__file__).resolve()), str(root.resolve()), *(only or [])],
             input=json.dumps(result),
             capture_output=True,
             text=True,
@@ -82,17 +89,25 @@ def validate(result, root):
                 "message": "Optional reference worker could not complete",
             }
             for name, url, commit in REFERENCES
+            if only is None or name in only
         ]
 
 
-def _validate(result, root):
+def _validate(result, root, only=None):
     records = []
     for name, url, commit in REFERENCES:
+        if only is not None and name not in only:
+            continue
         record = {
             "name": name,
             "url": url,
             "commit": commit,
-            "scope": "Statistics from the same trade ledger; not independent strategy execution",
+            "kind": "execution_scenarios" if name == "Backtrader" else "statistics",
+            "scope": (
+                "Controlled bracket execution scenarios; not a replay of this strategy or period"
+                if name == "Backtrader"
+                else "Statistics from the same trade ledger; not independent strategy execution"
+            ),
         }
         path = root / name
         if not path.exists():
@@ -103,6 +118,12 @@ def _validate(result, root):
             continue
         try:
             verify_checkout(path, commit)
+            if name == "Backtrader":
+                from bot.backtrader_checks import check_scenarios
+
+                record.update(check_scenarios(path))
+                records.append(record)
+                continue
             import numpy as np
             import pandas as pd
 
@@ -226,4 +247,9 @@ def _validate(result, root):
 
 
 if __name__ == "__main__":
-    print(json.dumps(_validate(json.load(sys.stdin), Path(sys.argv[1])), allow_nan=False))
+    print(
+        json.dumps(
+            _validate(json.load(sys.stdin), Path(sys.argv[1]), only=sys.argv[2:] or None),
+            allow_nan=False,
+        )
+    )

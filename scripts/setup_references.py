@@ -1,4 +1,4 @@
-"""Download the two user-selected references at their reviewed commits.
+"""Download user-selected references at their reviewed commits.
 
 Their source stays under ignored .runtime/references; no third-party code is
 copied into the distributed application. Install research dependencies with uv.
@@ -14,10 +14,13 @@ from bot.reference_checks import REFERENCES, verify_checkout
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--runtime", type=Path, default=Path(".runtime"))
+    parser.add_argument("--only", nargs="+", choices=[name for name, _, _ in REFERENCES])
     args = parser.parse_args()
     root = args.runtime / "references"
     root.mkdir(parents=True, exist_ok=True)
     for name, url, commit in REFERENCES:
+        if args.only and name not in args.only:
+            continue
         target = root / name
         if not target.exists():
             subprocess.run(["git", "init", str(target)], check=True, capture_output=True)
