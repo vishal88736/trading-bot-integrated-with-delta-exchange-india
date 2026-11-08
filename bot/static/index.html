@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/style.css" />
     <script src="/static/app.js" defer></script>
     <script src="/static/research.js" defer></script>
+    <script src="/static/lab.js" defer></script>
   </head>
   <body>
     <header class="topbar">
@@ -564,7 +565,11 @@
             <span class="bt-free-label"
               ><span class="dot"></span> Local &amp; free</span
             ><button id="backtest-export" class="secondary" disabled>
-              Export results ↓
+              JSON results ↓</button
+            ><button id="research-report" class="secondary" disabled>
+              HTML report ↓</button
+            ><button id="research-quantstats" class="secondary hidden" disabled>
+              QuantStats ↓
             </button>
           </div>
         </div>
@@ -578,7 +583,122 @@
               Strategy settings <span aria-hidden="true">↗</span>
             </button>
           </div>
+          <div class="research-setup-grid">
+            <label class="field"
+              >Test type<select id="research-mode">
+                <option value="single">Single backtest</option>
+                <option value="multi_coin">Compare coins</option>
+                <option value="parameters">Compare parameters</option>
+                <option value="walk_forward">Walk-forward validation</option>
+              </select></label
+            >
+            <label class="field"
+              >Historical cache<select id="research-cache">
+                <option value="use">Reuse saved candles</option>
+                <option value="refresh">Download fresh candles</option>
+                <option value="off">Bypass cache</option>
+              </select></label
+            >
+            <label class="field"
+              >Signal consistency check<select id="research-lookahead">
+                <option value="16">16 checkpoints + trade signals</option>
+                <option value="32">32 checkpoints + trade signals</option>
+                <option value="64">64 checkpoints + trade signals</option>
+                <option value="0">Disabled</option>
+              </select></label
+            >
+          </div>
+          <p id="research-mode-help" class="form-note">
+            Replay one strategy with its saved settings and inspect every trade.
+          </p>
           <div id="backtest-market-inputs" class="bt-market-grid"></div>
+          <div id="research-coin-options" class="research-options hidden">
+            <label class="field"
+              >Markets to compare
+              <input
+                id="research-symbols"
+                value="BTCUSD, ETHUSD"
+                autocomplete="off"
+                aria-describedby="research-symbols-help"
+              />
+            </label>
+            <p id="research-symbols-help" class="form-note">
+              Enter up to 12 Delta perpetual symbols, separated by commas. Each
+              market gets the same capital and contract count; exposure varies
+              by contract value.
+            </p>
+          </div>
+          <div id="research-grid-options" class="research-options hidden">
+            <div class="research-axis-grid">
+              <label class="field"
+                >First parameter<select id="research-axis-x"></select
+              ></label>
+              <label class="field"
+                >Values, separated by commas
+                <input
+                  id="research-values-x"
+                  value="7, 9, 12"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="field"
+                >Second parameter<select id="research-axis-y"></select
+              ></label>
+              <label class="field"
+                >Values, separated by commas
+                <input
+                  id="research-values-y"
+                  value="1.5, 2, 2.5"
+                  autocomplete="off"
+                />
+              </label>
+            </div>
+            <p class="form-note">
+              Up to 24 combinations. Invalid settings are listed separately.
+              Comparison rankings describe the selected historical period.
+            </p>
+          </div>
+          <div id="research-validation-options" class="research-options hidden">
+            <div class="research-setup-grid">
+              <label class="field"
+                >Ranking metric<select id="research-objective">
+                  <option value="return">Net return after fees</option>
+                  <option value="sharpe">Daily Sharpe</option>
+                  <option value="sortino">Daily Sortino</option>
+                  <option value="calmar">Calmar</option>
+                </select></label
+              >
+              <label class="field"
+                >Minimum closed trades<input
+                  id="research-min-trades"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  step="1"
+                  value="1"
+              /></label>
+            </div>
+            <div id="research-walk-options" class="research-setup-grid hidden">
+              <label class="field"
+                >Initial training portion (%)<input
+                  id="research-train"
+                  type="number"
+                  min="20"
+                  max="80"
+                  step="1"
+                  value="60"
+              /></label>
+              <label class="field"
+                >Untouched test folds<input
+                  id="research-folds"
+                  type="number"
+                  min="2"
+                  max="6"
+                  step="1"
+                  value="3"
+              /></label>
+            </div>
+          </div>
           <div class="bt-period-heading">
             <span>Test period <small>Dates use your local time</small></span>
             <div class="range-presets" aria-label="Backtest date presets">
@@ -633,9 +753,18 @@
                 Ready to run. Up to one year of free historical data.
               </p>
             </div>
-            <button type="submit" id="backtest-run" class="primary">
-              Run backtest <span aria-hidden="true">▶</span>
-            </button>
+            <div class="research-run-actions">
+              <button
+                type="button"
+                id="research-cancel"
+                class="secondary hidden"
+              >
+                Cancel research
+              </button>
+              <button type="submit" id="backtest-run" class="primary">
+                Run backtest <span aria-hidden="true">▶</span>
+              </button>
+            </div>
           </div>
           <dialog
             id="backtest-settings-dialog"
@@ -777,6 +906,55 @@
             </p>
           </div>
         </div>
+        <section
+          id="research-study"
+          class="data-panel hidden"
+          aria-labelledby="research-study-title"
+        >
+          <div class="section-heading">
+            <div>
+              <h2 id="research-study-title">Research results</h2>
+              <p id="research-study-method"></p>
+            </div>
+            <span id="research-study-count" role="status"></span>
+          </div>
+          <button type="button" id="research-combined" class="secondary hidden">
+            View combined out-of-sample result
+          </button>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            aria-label="Research comparison results"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Run</th>
+                  <th>Status</th>
+                  <th>Net return</th>
+                  <th>Drawdown</th>
+                  <th>Trades</th>
+                  <th>Training return</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="research-study-rows"></tbody>
+            </table>
+          </div>
+          <div id="research-parameter-map" class="hidden">
+            <h3>Parameter returns</h3>
+            <p class="form-note">
+              Each cell shows the historical return for that parameter
+              combination. This is an in-sample comparison.
+            </p>
+            <div
+              id="research-heatmap"
+              class="table-scroll"
+              tabindex="0"
+              aria-label="Parameter return heatmap"
+            ></div>
+          </div>
+        </section>
         <div id="backtest-results" class="hidden">
           <div class="bt-result-heading">
             <div>
@@ -865,6 +1043,25 @@
                 fees</span
               ><span id="bt-chart-candles"></span>
             </div>
+            <section
+              id="research-analytics"
+              class="hidden"
+              aria-labelledby="research-analytics-title"
+            >
+              <h3 id="research-analytics-title">Risk &amp; consistency</h3>
+              <dl id="research-metrics" class="research-metrics"></dl>
+              <p id="research-metric-method" class="form-note"></p>
+              <h3>Monthly returns</h3>
+              <p class="form-note">
+                UTC calendar months. An asterisk marks a partial month.
+              </p>
+              <div
+                id="research-months"
+                class="table-scroll"
+                tabindex="0"
+                aria-label="Monthly return heatmap"
+              ></div>
+            </section>
           </section>
           <section
             id="bt-trade-panel"
@@ -923,6 +1120,10 @@
               </div>
               <ul id="bt-assumptions" class="assumption-list"></ul>
               <p id="bt-rejections" class="form-note"></p>
+              <h3>Signal consistency</h3>
+              <div id="research-bias" class="notice"></div>
+              <h3>Historical data</h3>
+              <ul id="research-history" class="assumption-list"></ul>
             </div>
             <details class="data-panel bt-validation-details">
               <summary>Validation checks</summary>

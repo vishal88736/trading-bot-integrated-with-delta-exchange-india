@@ -524,6 +524,12 @@ $("backtest-form").onsubmit = async (event) => {
     fee_bps: Number($("backtest-fee").value),
     slippage_bps: Number($("backtest-slippage").value),
   };
+  try {
+    Object.assign(request, readResearchRequest());
+  } catch (error) {
+    showBacktestError(error.message);
+    return;
+  }
   const issue = settingsIssue(settings);
   if (issue) {
     const input = $(`backtest-setting-${issue.key}`);
@@ -603,13 +609,18 @@ function updateBacktestControls() {
     : backtestRunning
       ? "Replaying history…"
       : "Run backtest ▶";
+  if (typeof updateResearchControls === "function") updateResearchControls();
 }
 function setBacktestJob(job) {
   backtestRunning = job.status === "running";
   $("backtest-status").textContent = job.message;
   $("backtest-status").classList.toggle("error", job.status === "error");
   updateBacktestControls();
-  if (backtestRunning || job.status === "error") {
+  if (
+    backtestRunning ||
+    ["error", "cancelled"].includes(job.status) ||
+    (job.status === "completed" && !job.result)
+  ) {
     backtestResult = null;
     $("backtest-results").classList.add("hidden");
     $("bt-trade-panel").classList.add("hidden");
@@ -617,12 +628,22 @@ function setBacktestJob(job) {
     $("backtest-export").disabled = true;
     $("backtest-empty-title").textContent = backtestRunning
       ? "Your backtest is running"
-      : "This test could not complete";
+      : job.status === "cancelled"
+        ? "Research cancelled"
+        : "This test could not complete";
     $("backtest-empty-copy").textContent = backtestRunning
       ? "Fetching historical candles and replaying your strategy."
       : "Review the message above and adjust your parameters to try again.";
   }
-  if (job.result) renderBacktest(job.result);
+  if (
+    job.result &&
+    !(
+      typeof preserveResearchSelection === "function" &&
+      preserveResearchSelection(job)
+    )
+  )
+    renderBacktest(job.result);
+  document.dispatchEvent(new CustomEvent("research-job", { detail: job }));
 }
 async function pollBacktest() {
   if (backtestPolling || backtestSubmitting) return;
@@ -649,6 +670,11 @@ function renderBacktest(result) {
     `${result.settings.symbol} · ${result.settings.timeframe} backtest`;
   $("bt-result-source").textContent = result.source;
   const summary = result.summary;
+  if (result.walk_forward)
+    $("bt-result-title").textContent =
+      result.settings.symbol + " · Walk-forward out-of-sample";
+  if (typeof renderResearchAnalytics === "function")
+    renderResearchAnalytics(result);
   $("bt-pnl").textContent = `${number(summary.net_pnl)} ${result.quote}`;
   $("bt-pnl").className = summary.net_pnl >= 0 ? "positive" : "negative";
   $("bt-return").textContent =
@@ -909,9 +935,24 @@ $("bt-next").onclick = () => {
 $("backtest-export").onclick = () => {
   if (!backtestResult) return;
   const url = URL.createObjectURL(
-    new Blob([JSON.stringify(backtestResult, null, 2)], {
-      type: "application/json",
-    }),
+    new Blob(
+      [
+        JSON.stringify(
+          {
+            ...backtestResult,
+            research_study:
+              typeof researchJob !== "undefined"
+                ? researchJob?.study
+                : undefined,
+          },
+          null,
+          2,
+        ),
+      ],
+      {
+        type: "application/json",
+      },
+    ),
   );
   const link = document.createElement("a");
   link.href = url;

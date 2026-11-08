@@ -14,7 +14,8 @@ The bot takes partial profits and advances the remaining stop loss: **TP1 → en
 - **Configurable entries:** EMA cloud, CMO momentum, ATR levels, higher-timeframe filter, or your own Python entry rules.
 - **Settings preview:** live target reward/risk and partial contract sizes, keyboard navigation, and field-level validation feedback.
 - **Account information:** demo balances, available funds, margin, open positions, orders, and recent fills. Paper positions appear under Automation, while Account shows exchange data.
-- **Free backtesting:** one market per run, date presets up to one year, simulated costs, equity curve, trade timelines, and JSON export.
+- **Free backtesting:** up to one year, persistent candle caching, simulated costs, trade timelines, JSON and offline HTML reports.
+- **Research:** multi-coin comparison, parameter heatmaps, expanding walk-forward validation, daily risk metrics and sampled signal consistency checks.
 - **Reference checks:** two independent statistics implementations and 20 Backtrader broker execution scenarios.
 
 ## Quick start
@@ -111,7 +112,11 @@ Open **[Backtest](http://127.0.0.1:8000/#backtest)** and:
 4. Set starting capital. Open **Strategy settings** for indicators, risk/targets, fees, and slippage. Backtest settings are independent of the running bot.
 5. Select **Run backtest**. The form shows starting/replay feedback and prevents duplicate submissions.
 
-Results have **Overview**, **Trades**, and **Methodology** tabs. Open **View trade** for partial fills and stop updates. **Export results** downloads settings, contract metadata, the complete trade ledger/equity curve, assumptions, and reference checks as JSON.
+Choose **Test type** for a single replay, coin comparison, parameter comparison, or walk-forward validation. Research runs have progress and a separate **Cancel research** control. Their inputs never save or start the trading runner.
+
+Results have **Overview**, **Trades**, and **Methodology** tabs. Open **View trade** for partial fills and stop updates. **JSON results** includes the selected run's settings, full ledger/equity curve, assumptions, reference checks, and study metadata. **HTML report** downloads a self-contained report with no external resources. Optional **QuantStats** export uses locally calculated daily returns.
+
+See the [research guide](docs/research.md) for all modes, metrics, limits, and API examples.
 
 ### Historical data
 
@@ -119,7 +124,7 @@ Results have **Overview**, **Trades**, and **Methodology** tabs. Open **View tra
 - Requests use windows below the 2,000-candle response limit. Candles are sorted, deduplicated, and checked for continuous coverage.
 - Signal and higher-timeframe history are fetched separately, with 600 earlier candles per timeframe for indicator warmup. Warmup is excluded from the reported trading period.
 - Only closed candles are used. Missing history produces an error rather than invented prices or a silently shortened test.
-- Every run downloads history again; there is currently no persistent candle cache.
+- Closed candles are cached in `.runtime/history.sqlite3`, separated by source host, symbol, and timeframe. **Reuse saved candles** fills only missing ranges, **Download fresh candles** replaces the requested ranges, and **Bypass cache** downloads without using or updating the cache. Methodology records cached/downloaded counts and fetch times.
 
 A 365-day test at five-minute resolution contains **105,120 test candles**. A full year is also supported at one-minute resolution, subject to data availability. Recently listed markets may need shorter periods.
 

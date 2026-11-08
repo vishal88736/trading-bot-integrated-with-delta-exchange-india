@@ -21,7 +21,11 @@ class Service:
         self.active_settings = None
         self.error = None
         self.account = Account(self.credentials)
-        self.backtests = Backtests(reference_root=root / "references")
+        self.backtests = Backtests(
+            reference_root=root / "references",
+            cache_path=root / "history.sqlite3",
+            artifact_root=root / "research",
+        )
 
     @property
     def running(self):

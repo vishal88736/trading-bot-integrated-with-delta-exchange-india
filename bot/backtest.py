@@ -2,14 +2,20 @@
 
 import bisect
 import copy
+import gzip
+import json
+import tempfile
 import threading
 import time
+import uuid
 from collections import Counter
+from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from bot.models import RESOLUTIONS
+from bot.research import Cancelled, ResearchOptions
 from bot.risk import next_stop, trade_plan
 from bot.settings import Settings
 from clients.delta import Delta, DeltaError, PublicHistory
@@ -28,6 +34,10 @@ class BacktestRequest(BaseModel):
     initial_balance: float = Field(default=10000.0, gt=0, le=1000000000)
     fee_bps: float = Field(default=5.0, ge=0, le=100)
     slippage_bps: float = Field(default=2.0, ge=0, le=500)
+    cache: Literal["use", "refresh", "off"] = "use"
+    check_lookahead: bool = True
+    lookahead_samples: int = Field(default=16, ge=4, le=64)
+    research: ResearchOptions = Field(default_factory=ResearchOptions)
 
     @model_validator(mode="after")
     def valid_period(self):
@@ -39,6 +49,13 @@ class BacktestRequest(BaseModel):
             raise ValueError("Choose at least two candles and a range up to one year (366 days)")
         if self.slippage_bps > self.settings.max_entry_slippage_bps:
             raise ValueError("Test slippage exceeds the strategy's maximum entry slippage")
+        if self.research.kind == "walk_forward":
+            from bot.research import walk_windows
+
+            try:
+                walk_windows(self)
+            except DeltaError as exc:
+                raise ValueError(str(exc)) from None
         return self
 
 
@@ -292,14 +309,24 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
 
 
 class Backtests:
-    def __init__(self, factory=None, reference_root=None):
+    def __init__(self, factory=None, reference_root=None, cache_path=None, artifact_root=None):
         self.factory = factory
         self.reference_root = reference_root
+        self.cache_path = cache_path
+        self.temporary = tempfile.TemporaryDirectory() if artifact_root is None else None
+        self.artifact_root = Path(artifact_root or self.temporary.name)
+        self.artifact_root.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.lock = threading.RLock()
+        self.cancel_event = threading.Event()
+        self.run_id = uuid.uuid4().hex
+        self.results = set()
+        self.thread = None
         self.job = {
             "status": "idle",
             "message": "Choose a date range and run a backtest",
             "result": None,
+            "study": None,
+            "run_id": self.run_id,
         }
 
     def snapshot(self):
@@ -310,6 +337,9 @@ class Backtests:
         with self.lock:
             if self.job["status"] == "running":
                 raise DeltaError("A backtest is already running")
+            self.cancel_event.clear()
+            self.run_id = uuid.uuid4().hex
+            self.results = set()
             self.job = {
                 "status": "running",
                 "message": (
@@ -318,9 +348,116 @@ class Backtests:
                     else "Loading Delta demo historical candles"
                 ),
                 "result": None,
+                "study": None,
+                "run_id": self.run_id,
             }
-            threading.Thread(target=self._run, args=(request,), daemon=True).start()
+            self.thread = threading.Thread(target=self._run, args=(request,), daemon=True)
+            self.thread.start()
             return copy.deepcopy(self.job)
+
+    def cancel(self):
+        with self.lock:
+            if self.job["status"] == "running":
+                self.cancel_event.set()
+                self.job["message"] = "Cancelling after the current data request"
+            return copy.deepcopy(self.job)
+
+    def update_study(self, study):
+        with self.lock:
+            self.job["study"] = copy.deepcopy(study)
+
+    def save_result(self, index, result):
+        directory = self.artifact_root / self.run_id
+        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+        path = directory / f"{index}.json.gz"
+        temporary = path.with_suffix(".tmp")
+        with gzip.open(temporary, "wt", encoding="utf-8") as stream:
+            json.dump(result, stream, allow_nan=False, separators=(",", ":"))
+        temporary.replace(path)
+        self.results.add(index)
+
+    def read_result(self, index, run_id=None):
+        if run_id is not None and run_id != self.run_id:
+            raise DeltaError("This result belongs to an earlier run; refresh the research page")
+        if index not in self.results:
+            raise DeltaError("This run has no completed result")
+        with gzip.open(self.artifact_root / self.run_id / f"{index}.json.gz", "rt") as stream:
+            return json.load(stream)
+
+    def report(self, index, run_id, flavour="html"):
+        from bot.analytics import html_report, quantstats_report
+
+        with self.lock:
+            if self.job["status"] != "completed":
+                raise DeltaError("Wait for the research run to complete before exporting a report")
+            result = self.read_result(index, run_id)
+            study = copy.deepcopy(self.job.get("study"))
+            path = self.artifact_root / self.run_id / f"{index}-{flavour}.html"
+            if flavour == "quantstats":
+                if not path.exists():
+                    quantstats_report(result, path)
+            else:
+                path.write_text(html_report(result, study), encoding="utf-8")
+            return path
+
+    def load_history(self, request, client):
+        from bot.history_cache import HistoryCache
+
+        s = request.settings
+        product = client.product(s.symbol)
+        datasets, stats = [], []
+        cache = (
+            HistoryCache(self.cache_path) if self.cache_path and request.cache != "off" else None
+        )
+        for resolution, start in [
+            (s.timeframe, request.start - HISTORY_WINDOW * RESOLUTIONS[s.timeframe]),
+            (
+                s.higher_timeframe,
+                request.start // RESOLUTIONS[s.higher_timeframe] * RESOLUTIONS[s.higher_timeframe]
+                - HISTORY_WINDOW * RESOLUTIONS[s.higher_timeframe],
+            ),
+        ]:
+            self.progress(f"Loading {s.symbol} {resolution} history")
+            if cache:
+                candles, info = cache.fetch(
+                    client,
+                    request.source,
+                    s.symbol,
+                    resolution,
+                    start,
+                    request.end,
+                    self.progress,
+                    request.cache,
+                )
+            else:
+                candles = client.historical_candles(
+                    s.symbol, resolution, start, request.end, self.progress
+                )
+                info = {
+                    "source": request.source,
+                    "symbol": s.symbol,
+                    "resolution": resolution,
+                    "policy": "off",
+                    "cached": 0,
+                    "downloaded": len(candles),
+                }
+            datasets.append(candles)
+            stats.append(info)
+        return *datasets, product, stats
+
+    def replay(self, request, candles, higher, product, history):
+        from bot.analytics import analytics
+        from bot.strategy_checks import lookahead_check
+
+        result = simulate(request, candles, higher, product, progress=self.progress)
+        result["history"] = history
+        result["analytics"] = analytics(result)
+        result["lookahead_check"] = (
+            lookahead_check(request, candles, higher, result, self.progress)
+            if request.check_lookahead
+            else {"status": "not_run", "samples": 0, "message": "Disabled for this research run"}
+        )
+        return result
 
     def _run(self, request):
         client = None
@@ -328,33 +465,41 @@ class Backtests:
             client = (
                 self.factory or (PublicHistory if request.source == "india_public" else Delta)
             )()
-            s = request.settings
-            product = client.product(s.symbol)
-            candles = client.historical_candles(
-                s.symbol,
-                s.timeframe,
-                request.start - HISTORY_WINDOW * RESOLUTIONS[s.timeframe],
-                request.end,
-                self.progress,
-            )
-            higher = client.historical_candles(
-                s.symbol,
-                s.higher_timeframe,
-                request.start // RESOLUTIONS[s.higher_timeframe] * RESOLUTIONS[s.higher_timeframe]
-                - HISTORY_WINDOW * RESOLUTIONS[s.higher_timeframe],
-                request.end,
-                self.progress,
-            )
-            result = simulate(request, candles, higher, product, progress=self.progress)
-            if self.reference_root is not None:
+            if request.research.kind == "single":
+                candles, higher, product, history = self.load_history(request, client)
+                result = self.replay(request, candles, higher, product, history)
+                study, selected = None, 0
+            else:
+                from bot.research import run_comparison, run_walk_forward
+
+                run = (
+                    run_walk_forward if request.research.kind == "walk_forward" else run_comparison
+                )
+                result, study = run(self, request, client)
+                selected = study["selected_id"]
+            if result is not None and self.reference_root is not None:
                 from bot.reference_checks import validate
 
                 self.progress(
                     "Checking reference statistics and independent bracket execution scenarios"
                 )
                 result["reference_checks"] = validate(result, self.reference_root)
+            if result is not None:
+                self.save_result(selected, result)
+            self.progress("Finishing research report")
             with self.lock:
-                self.job = {"status": "completed", "message": "Backtest complete", "result": result}
+                self.job = {
+                    "status": "completed",
+                    "message": "Backtest complete"
+                    if result is not None
+                    else "No markets completed; see individual data errors below",
+                    "result": result,
+                    "study": study,
+                    "run_id": self.run_id,
+                }
+        except Cancelled:
+            with self.lock:
+                self.job.update(status="cancelled", message="Research cancelled", result=None)
         except Exception as exc:
             message = (
                 str(exc)
@@ -362,11 +507,13 @@ class Backtests:
                 else "Backtest failed: check history availability and strategy inputs"
             )
             with self.lock:
-                self.job = {"status": "error", "message": message, "result": None}
+                self.job.update(status="error", message=message, result=None)
         finally:
             if client is not None:
                 client.close()
 
     def progress(self, message):
+        if self.cancel_event.is_set():
+            raise Cancelled
         with self.lock:
             self.job["message"] = message

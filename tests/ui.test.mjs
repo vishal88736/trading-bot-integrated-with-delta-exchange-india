@@ -64,6 +64,64 @@ const ready = {
     fills: { updated_at: 1700000000, rows: [] },
   },
 };
+function researchResult(symbol = "ETHUSD") {
+  return {
+    source: "Fixture public history",
+    quote: "USD",
+    settings: { ...settings, symbol },
+    candles: 300,
+    warmup_candles: 600,
+    ambiguous_candles: 0,
+    actual_start: 1700000000,
+    actual_end: 1700086400,
+    summary: {
+      net_pnl: 10,
+      return_percent: 0.1,
+      trades: 0,
+      win_rate: null,
+      max_drawdown_percent: 0,
+      fees: 0,
+      profit_factor: null,
+      gross_profit: 10,
+      ending_equity: 10010,
+    },
+    trades: [],
+    equity_curve: [{ time: 1700086400, equity: 10010 }],
+    assumptions: [],
+    rejected_entries: {},
+    analytics: {
+      quantstats_version: null,
+      metrics: {
+        sharpe: 1.2,
+        sortino: null,
+        calmar: null,
+        max_drawdown_days: 0.5,
+        annual_volatility_percent: 2.5,
+        complete_days: 5,
+      },
+      monthly_returns: [
+        { month: "2026-01", return_percent: 0.1, partial: true },
+      ],
+      daily_returns: [],
+    },
+    lookahead_check: {
+      status: "passed",
+      samples: 16,
+      message: "16 sampled checks agree",
+      scope: "Sampled consistency does not prove every signal is unbiased.",
+    },
+    history: [
+      {
+        symbol,
+        source: "india_public",
+        resolution: "5m",
+        policy: "use",
+        cached: 300,
+        downloaded: 0,
+      },
+    ],
+  };
+}
 async function settle() {
   for (let i = 0; i < 4; i++)
     await new Promise((resolve) => setImmediate(resolve));
@@ -108,13 +166,204 @@ async function dashboard(t, account = ready, status = initial, hash = "") {
     } else data = { saved: true };
     return { ok: true, json: async () => structuredClone(data) };
   };
-  for (const file of ["app.js", "research.js"])
+  for (const file of ["app.js", "research.js", "lab.js"])
     new vm.Script(readFileSync(`bot/static/${file}`, "utf8"), {
       filename: file,
     }).runInContext(dom.getInternalVMContext());
   await settle();
   return { w, document: w.document, calls, state };
 }
+
+test("parameter research submits a bounded grid without changing the runner", async (t) => {
+  const { w, document: d, calls, state } = await dashboard(t);
+  d.getElementById("research-mode").value = "parameters";
+  d.getElementById("research-mode").dispatchEvent(new w.Event("change"));
+  assert.equal(
+    d.getElementById("research-grid-options").classList.contains("hidden"),
+    false,
+  );
+  assert.equal(d.getElementById("research-symbols").disabled, true);
+  d.getElementById("backtest-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  await settle();
+  const body = calls.find(
+    (call) => call.url === "/api/backtests" && call.body,
+  )?.body;
+  assert.equal(body.research.kind, "parameters");
+  assert.deepEqual(body.research.grid, {
+    fast_ema: [7, 9, 12],
+    sl_atr: [1.5, 2, 2.5],
+  });
+  assert.equal(body.cache, "use");
+  assert.equal(body.check_lookahead, true);
+  assert.equal(state.settings.fast_ema, 9);
+  assert.ok(
+    !calls.some((call) => ["/api/start", "/api/settings"].includes(call.url)),
+  );
+});
+
+test("multi-coin inputs normalize symbols and walk-forward controls stay isolated", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  d.getElementById("research-mode").value = "multi_coin";
+  d.getElementById("research-mode").dispatchEvent(new w.Event("change"));
+  d.getElementById("research-symbols").value = " btcusd, ethusd ";
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(w.readResearchRequest().research.symbols)),
+    ["BTCUSD", "ETHUSD"],
+  );
+  d.getElementById("research-mode").value = "walk_forward";
+  d.getElementById("research-mode").dispatchEvent(new w.Event("change"));
+  assert.equal(
+    d.getElementById("research-walk-options").classList.contains("hidden"),
+    false,
+  );
+  d.getElementById("research-train").value = "70";
+  d.getElementById("research-folds").value = "2";
+  assert.equal(w.readResearchRequest().research.train_percent, 70);
+  assert.equal(w.readResearchRequest().research.folds, 2);
+  d.getElementById("research-train").value = "";
+  d.getElementById("research-min-trades").value = "";
+  d.getElementById("research-mode").value = "single";
+  d.getElementById("research-mode").dispatchEvent(new w.Event("change"));
+  assert.equal(d.getElementById("research-folds").disabled, true);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(w.readResearchRequest().research.grid)),
+    {},
+  );
+  assert.equal(w.readResearchRequest().research.train_percent, 60);
+  assert.equal(w.readResearchRequest().research.minimum_trades, 1);
+});
+
+test("research rejects oversized grids before starting work", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  d.getElementById("research-mode").value = "parameters";
+  d.getElementById("research-mode").dispatchEvent(new w.Event("change"));
+  d.getElementById("research-values-x").value = "2,3,4,5,6";
+  d.getElementById("research-values-y").value = "1,2,3,4,5";
+  d.getElementById("backtest-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  await settle();
+  assert.match(
+    d.getElementById("backtest-status").textContent,
+    /24 combinations/,
+  );
+  assert.ok(!calls.some((call) => call.url === "/api/backtests" && call.body));
+});
+
+test("completed studies display their selected run and preserve row selection on refresh", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  const result = researchResult();
+  const job = {
+    run_id: "fixture-run",
+    status: "completed",
+    message: "Complete",
+    result,
+    study: {
+      kind: "parameters",
+      title: "Parameter comparison",
+      methodology: "In-sample.",
+      selected_id: 5,
+      rows: [
+        {
+          id: 1,
+          label: "Fast EMA 7",
+          parameters: { fast_ema: 7 },
+          status: "completed",
+          summary: result.summary,
+        },
+        {
+          id: 5,
+          label: "Fast EMA 9",
+          parameters: { fast_ema: 9 },
+          status: "completed",
+          summary: result.summary,
+        },
+        {
+          id: 6,
+          label: "Invalid",
+          parameters: { fast_ema: 99 },
+          status: "invalid",
+          error: "<img src=x onerror=bad>",
+        },
+      ],
+    },
+  };
+  w.setBacktestJob({
+    run_id: "fixture-run",
+    status: "running",
+    message: "Running",
+    result: null,
+  });
+  w.setBacktestJob(job);
+  assert.equal(
+    d.getElementById("backtest-results").classList.contains("hidden"),
+    false,
+  );
+  assert.match(d.getElementById("research-study-rows").textContent, /Viewing/);
+  assert.equal(d.querySelector("#research-study-rows img"), null);
+  assert.match(d.getElementById("research-heatmap").textContent, /0.10%/);
+  w.fetch = async () => ({
+    ok: true,
+    json: async () => researchResult("BTCUSD"),
+  });
+  await w.selectResearchResult(1);
+  assert.match(d.getElementById("bt-result-title").textContent, /BTCUSD/);
+  w.setBacktestJob(job);
+  assert.match(d.getElementById("bt-result-title").textContent, /BTCUSD/);
+  assert.equal(d.getElementById("research-report").disabled, false);
+  assert.equal(
+    d.getElementById("research-quantstats").classList.contains("hidden"),
+    true,
+  );
+});
+
+test("risk reports label daily metrics, partial months, cache provenance and sampled checks", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  w.setBacktestJob({
+    run_id: "report-run",
+    status: "completed",
+    message: "Complete",
+    result: researchResult(),
+  });
+  assert.match(
+    d.getElementById("research-metrics").textContent,
+    /Daily Sharpe/,
+  );
+  assert.match(d.getElementById("research-months").textContent, /0.10% \*/);
+  assert.match(
+    d.getElementById("research-history").textContent,
+    /300 cached, 0 downloaded/,
+  );
+  assert.match(d.getElementById("research-bias").textContent, /does not prove/);
+  const failed = researchResult();
+  failed.lookahead_check.status = "failed";
+  w.renderBacktest(failed);
+  assert.equal(
+    d.getElementById("research-bias").classList.contains("error"),
+    true,
+  );
+});
+
+test("cancelling research uses its own endpoint and leaves trading controls alone", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  w.setBacktestJob({
+    run_id: "cancel-run",
+    status: "running",
+    message: "Running",
+    result: null,
+  });
+  assert.equal(d.getElementById("research-cancel").disabled, false);
+  d.getElementById("research-cancel").click();
+  await settle();
+  assert.ok(calls.some((call) => call.url === "/api/backtests/cancel"));
+  assert.ok(
+    !calls.some((call) =>
+      ["/api/stop", "/api/start", "/api/reconcile"].includes(call.url),
+    ),
+  );
+});
 
 test("navigation restores the selected page from the URL", async (t) => {
   const { w, document: d } = await dashboard(t, ready, initial, "#backtest");

@@ -2339,3 +2339,116 @@ td details li {
     animation: none;
   }
 }
+/* Research controls remain separate from the live runner settings. */
+.research-setup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 20px 0;
+}
+.research-axis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.research-options {
+  border: 1px solid #dce4dc;
+  background: #f7f9f5;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 18px;
+}
+.research-run-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.research-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 20px 0;
+}
+.research-metrics > div {
+  padding: 18px;
+  border: 1px solid #dce4dc;
+  border-radius: 10px;
+}
+.research-metrics dt {
+  color: #4c6155;
+  font-size: 14px;
+}
+.research-metrics dd {
+  margin: 8px 0 0;
+  font-size: 24px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+#research-analytics,
+#research-parameter-map {
+  border-top: 1px solid #e0e6df;
+  padding-top: 24px;
+  margin-top: 24px;
+}
+#research-months table,
+#research-heatmap table {
+  min-width: 660px;
+  font-variant-numeric: tabular-nums;
+}
+#research-months td,
+#research-heatmap td {
+  text-align: center;
+  white-space: nowrap;
+}
+.return-gain {
+  background: #e1f0e5;
+  color: #185a36;
+}
+.return-loss {
+  background: #f9e6df;
+  color: #8d3526;
+}
+.return-flat {
+  background: #f3f5f0;
+  color: #425448;
+}
+.return-missing {
+  color: #627065;
+}
+#research-study:not([data-kind="walk_forward"]) th:nth-child(6),
+#research-study:not([data-kind="walk_forward"]) td:nth-child(6) {
+  display: none;
+}
+#research-study td:first-child {
+  max-width: 320px;
+  overflow-wrap: anywhere;
+}
+#research-combined {
+  margin-bottom: 20px;
+}
+.bt-page-actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 900px) {
+  .research-setup-grid,
+  .research-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .research-setup-grid,
+  .research-axis-grid,
+  .research-metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .research-options {
+    padding: 16px;
+  }
+  .research-run-actions {
+    width: 100%;
+  }
+  .research-run-actions button {
+    flex: 1;
+  }
+}

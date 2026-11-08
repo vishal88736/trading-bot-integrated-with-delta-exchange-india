@@ -28,4 +28,15 @@ jobs:
       - run: npm test
       - run: node --check bot/static/app.js
       - run: node --check bot/static/research.js
+      - run: node --check bot/static/lab.js
       - run: uv build --no-sources
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --frozen --group research
+      - run: uv run --frozen --group research pytest tests/test_research.py

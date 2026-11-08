@@ -147,6 +147,20 @@ def create_app(root: Path = Path(".runtime")):
     def backtest(value: BacktestRequest):
         return service.backtests.start(value)
 
+    @app.post("/api/backtests/cancel")
+    def cancel_backtest():
+        return service.backtests.cancel()
+
+    @app.get("/api/backtests/results/{index}")
+    def research_result(index: int, run_id: str):
+        with service.backtests.lock:
+            return service.backtests.read_result(index, run_id)
+
+    @app.get("/api/backtests/reports/{index}")
+    def research_report(index: int, run_id: str, format: Literal["html", "quantstats"] = "html"):
+        path = service.backtests.report(index, run_id, format)
+        return FileResponse(path, filename=f"delta-backtest-{index}-{format}.html")
+
     @app.post("/api/start")
     def start(value: StartRequest):
         service.start(confirm_demo=value.confirm_demo, expected_mode=value.expected_mode)
