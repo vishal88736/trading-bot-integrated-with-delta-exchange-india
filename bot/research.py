@@ -23,6 +23,23 @@ PARAMETERS = {
     "tp0",
     "tp1",
     "tp2",
+    "trend_fast_period",
+    "trend_slow_period",
+    "breakout_lookback",
+    "breakout_volume_length",
+    "breakout_volume_multiplier",
+    "breakout_buffer_atr",
+    "rsi_length",
+    "rsi_oversold",
+    "rsi_overbought",
+    "rsi_exit_level",
+    "rsi_max_ema_gap_atr",
+    "smc_swing_length",
+    "smc_order_block_lookback",
+    "smc_zone_expiry",
+    "smc_body_ratio",
+    "smc_min_gap_bps",
+    "risk_per_trade_percent",
 }
 
 

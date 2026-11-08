@@ -11,7 +11,8 @@ The bot takes partial profits and advances the remaining stop loss: **TP1 → en
 ## Features
 
 - **Automation dashboard:** candle chart, strategy flow, saved position, current stop, and activity history.
-- **Configurable entries:** EMA cloud, CMO momentum, ATR levels, higher-timeframe filter, or your own Python entry rules.
+- **Configurable strategies:** EMA/CMO cloud, momentum breakout, EMA trend following, SMC price action, RSI mean reversion, or your own Python entry rules.
+- **Sizing and exits:** optional planned-risk sizing (0.1–2%), direction controls, and strategy-specific exits alongside the ATR target/stop ladder.
 - **Settings preview:** live target reward/risk and partial contract sizes, keyboard navigation, and field-level validation feedback.
 - **Account information:** demo balances, available funds, margin, open positions, orders, and recent fills. Paper positions appear under Automation, while Account shows exchange data.
 - **Free backtesting:** up to one year, persistent candle caching, simulated costs, trade timelines, JSON and offline HTML reports.
@@ -117,6 +118,8 @@ Choose **Test type** for a single replay, coin comparison, parameter comparison,
 Results have **Overview**, **Trades**, and **Methodology** tabs. Open **View trade** for partial fills and stop updates. **JSON results** includes the selected run's settings, full ledger/equity curve, assumptions, reference checks, and study metadata. **HTML report** downloads a self-contained report with no external resources. Optional **QuantStats** export uses locally calculated daily returns.
 
 See the [research guide](docs/research.md) for all modes, metrics, limits, and API examples.
+
+The [strategy guide](docs/strategies.md) defines every new entry/exit rule, editable filter, preset, and risk-sizing assumption.
 
 ### Historical data
 

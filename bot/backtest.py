@@ -16,11 +16,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from bot.models import RESOLUTIONS
 from bot.research import Cancelled, ResearchOptions
-from bot.risk import next_stop, trade_plan
+from bot.risk import entry_size, next_stop, trade_plan
 from bot.settings import Settings
 from clients.delta import Delta, DeltaError, PublicHistory
-from strategies.custom_strategy import CustomStrategy
-from strategies.trend_signals import TrendSignals
+from strategies.catalogue import create_strategy, direction_allowed, parameter_keys
 
 HISTORY_WINDOW = 600  # Matches the live runner's indicator history.
 
@@ -49,6 +48,8 @@ class BacktestRequest(BaseModel):
             raise ValueError("Choose at least two candles and a range up to one year (366 days)")
         if self.slippage_bps > self.settings.max_entry_slippage_bps:
             raise ValueError("Test slippage exceeds the strategy's maximum entry slippage")
+        if set(self.research.grid) - parameter_keys(self.settings):
+            raise ValueError("Parameter grid includes a field unused by the selected strategy")
         if self.research.kind == "walk_forward":
             from bot.research import walk_windows
 
@@ -64,15 +65,14 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
     interval = RESOLUTIONS[settings.timeframe]
     hinterval = RESOLUTIONS[settings.higher_timeframe]
     higher_closes = [c.time + hinterval for c in higher]
-    strategy = strategy or (
-        TrendSignals if settings.strategy == "trend_signals" else CustomStrategy
-    )(settings)
+    strategy = strategy or create_strategy(settings)
     prepared = strategy.prepare(candles, higher) if hasattr(strategy, "prepare") else None
     multiplier = float(product["contract_value"])
     quote = product["quoting_asset"]["symbol"]
     cash = request.initial_balance
     fee_rate, slip = request.fee_bps / 10000, request.slippage_bps / 10000
     position, pending, trade = None, None, None
+    pending_exit = None
     trades, curve, rejected = [], [], Counter()
     fees, peak, max_drawdown = 0.0, cash, 0.0
     ambiguous_bars = set()
@@ -85,9 +85,8 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
         raise DeltaError("The selected range contains no complete candles")
     first = test_indices[0]
     hcount = bisect.bisect_right(higher_closes, candles[first].time)
-    if first < max(settings.slow_ema, settings.cmo_length + 2, settings.atr_length) or hcount < max(
-        settings.slow_ema, settings.macro_sma
-    ):
+    lower_warmup, higher_warmup = settings.warmup_requirements()
+    if first < lower_warmup or hcount < higher_warmup:
         raise DeltaError("Not enough earlier candles to warm up the strategy")
 
     def close_leg(quantity, reference, timestamp, reason):
@@ -118,22 +117,35 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
     for ordinal, index in enumerate(test_indices):
         candle = candles[index]
         was_in_trade = position is not None
+        if pending_exit and position:
+            close_leg(position.remaining, candle.open, candle.time, pending_exit)
+        pending_exit = None
         if pending:
             direction = 1 if pending.side == "buy" else -1
             entry = candle.open * (1 + direction * slip)
-            notional = entry * settings.contracts * multiplier
+            sizing = entry_size(
+                settings,
+                pending,
+                entry,
+                product["tick_size"],
+                multiplier,
+                max(0, cash),
+                max(0, cash),
+                request.fee_bps,
+            )
+            quantity = sizing["quantity"]
+            notional = entry * quantity * multiplier
             entry_fee = notional * fee_rate
             if cash - request.initial_balance <= -settings.max_loss_quote or cash <= 0:
                 rejected["realized_loss_limit"] += 1
-            elif (
-                settings.contracts > settings.max_contracts
-                or notional > settings.max_notional_quote
-            ):
+            elif not quantity:
+                rejected["risk_budget_or_minimum_size"] += 1
+            elif quantity > settings.max_contracts or notional > settings.max_notional_quote:
                 rejected["position_limit"] += 1
             elif notional / settings.leverage + entry_fee > cash:
                 rejected["insufficient_simulated_funds"] += 1
             else:
-                position = trade_plan(settings, pending, entry, product["tick_size"])
+                position = trade_plan(settings, pending, entry, product["tick_size"], quantity)
                 cash -= entry_fee
                 fees += entry_fee
                 trade = {
@@ -144,7 +156,8 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
                     "atr": pending.atr,
                     "initial_stop": position.stop,
                     "targets": position.targets[:],
-                    "quantity": settings.contracts,
+                    "quantity": quantity,
+                    "sizing": sizing,
                     "net_pnl": -entry_fee,
                     "fees": entry_fee,
                     "exits": [],
@@ -197,6 +210,21 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
                                 "advanced_stop",
                             )
 
+        if (
+            position
+            and settings.exit_mode != "ladder_only"
+            and (hasattr(prepared, "exit_at") or hasattr(strategy, "exit_reason"))
+        ):
+            end = bisect.bisect_right(higher_closes, candle.time + interval)
+            pending_exit = (
+                prepared.exit_at(index, position.side)
+                if hasattr(prepared, "exit_at")
+                else strategy.exit_reason(
+                    position.side,
+                    candles[max(0, index - HISTORY_WINDOW + 1) : index + 1],
+                    higher[max(0, end - HISTORY_WINDOW) : end],
+                )
+            )
         if not traded_this_bar and ordinal < len(test_indices) - 1:
             end = bisect.bisect_right(higher_closes, candle.time + interval)
             signal = (
@@ -210,7 +238,10 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
             if signal:
                 if signal.time != candle.time:
                     raise DeltaError("Strategy returned a signal for a different candle")
-                pending = signal
+                if direction_allowed(settings, signal.side):
+                    pending = signal
+                else:
+                    rejected["direction_filter"] += 1
         unrealized = 0.0
         if position:
             direction = 1 if position.side == "buy" else -1
@@ -275,6 +306,8 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
         "equity_curve": curve,
         "assumptions": [
             "Closed-candle signals; entries at the next candle open with adverse slippage.",
+            "Enabled strategy exits execute at the next candle open after close confirmation.",
+            "Risk sizing reserves stop distance and costs; gaps can exceed planned risk.",
             (
                 "Initial stop and targets use the same rounded ATR levels "
                 "and allocations as the runner."
@@ -417,6 +450,9 @@ class Backtests:
                 - HISTORY_WINDOW * RESOLUTIONS[s.higher_timeframe],
             ),
         ]:
+            if len(datasets) == 1 and not s.requires_higher_history():
+                datasets.append([])
+                continue
             self.progress(f"Loading {s.symbol} {resolution} history")
             if cache:
                 candles, info = cache.fetch(

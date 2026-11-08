@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Delta / Automation</title>
     <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/strategies.js" defer></script>
     <script src="/static/app.js" defer></script>
     <script src="/static/research.js" defer></script>
     <script src="/static/lab.js" defer></script>
@@ -215,12 +216,12 @@
                   <div class="indicator-grid">
                     <div>
                       <span class="indicator-icon yellow">∿</span
-                      ><strong>EMA cloud</strong
+                      ><strong id="flow-trend-title">EMA cloud</strong
                       ><small id="flow-ema">9 / 21 periods</small>
                     </div>
                     <div>
                       <span class="indicator-icon blue">⇅</span
-                      ><strong>CMO</strong
+                      ><strong id="flow-momentum-title">CMO</strong
                       ><small id="flow-cmo">14 · zero cross</small>
                     </div>
                     <div>
@@ -612,6 +613,16 @@
             Replay one strategy with its saved settings and inspect every trade.
           </p>
           <div id="backtest-market-inputs" class="bt-market-grid"></div>
+          <div class="strategy-recipe-row">
+            <p id="backtest-strategy-description" class="form-note"></p>
+            <button
+              type="button"
+              id="backtest-strategy-preset"
+              class="secondary"
+            >
+              Load strategy preset
+            </button>
+          </div>
           <div id="research-coin-options" class="research-options hidden">
             <label class="field"
               >Markets to compare
@@ -1226,6 +1237,12 @@
             before editing. Saving demo API keys connects account information;
             choose Demo execution mode explicitly to send orders to Delta demo.
           </p>
+          <div class="strategy-recipe-row">
+            <p id="strategy-description" class="form-note"></p>
+            <button type="button" id="strategy-preset" class="secondary">
+              Load strategy preset
+            </button>
+          </div>
           <div id="strategy-inputs" class="form-grid"></div>
         </div>
         <div

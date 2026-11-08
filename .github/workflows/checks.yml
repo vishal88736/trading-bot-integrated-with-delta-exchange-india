@@ -29,6 +29,7 @@ jobs:
       - run: node --check bot/static/app.js
       - run: node --check bot/static/research.js
       - run: node --check bot/static/lab.js
+      - run: node --check bot/static/strategies.js
       - run: uv build --no-sources
   research:
     runs-on: ubuntu-latest

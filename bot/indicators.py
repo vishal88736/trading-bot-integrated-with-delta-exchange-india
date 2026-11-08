@@ -92,3 +92,41 @@ def atr(candles: list[Candle], length: int) -> list[float | None]:
         value = (value * (length - 1) + ranges[index]) / length
         result[index] = value
     return result
+
+
+def prior_extreme(values, length, highest=True):
+    """Highest/lowest of the prior N bars, excluding the decision candle."""
+    result, queue = [None] * len(values), deque()
+    for index, value in enumerate(values):
+        while queue and queue[0] < index - length:
+            queue.popleft()
+        if index >= length:
+            result[index] = values[queue[0]]
+        while queue and (values[queue[-1]] <= value if highest else values[queue[-1]] >= value):
+            queue.pop()
+        queue.append(index)
+    return result
+
+
+def prior_mean(values, length):
+    result, queue = [None] * len(values), deque(maxlen=length)
+    for index, value in enumerate(values):
+        if len(queue) == length:
+            result[index] = fsum(queue) / length
+        queue.append(value)
+    return result
+
+
+def windowed_rsi(values, length):
+    """Wilder RSI using exactly the runner's 600-price / 599-change window."""
+    result = [None] * len(values)
+    changes = [b - a for a, b in zip(values, values[1:], strict=False)]
+    gains = windowed_average([max(v, 0) for v in changes], length, 1 / length, window=599)
+    losses = windowed_average([max(-v, 0) for v in changes], length, 1 / length, window=599)
+    magnitudes = [abs(v) for v in changes]
+    flat = prior_extreme(magnitudes, 598)
+    for index in range(length, len(values)):
+        up, down = max(0, gains[index - 1]), max(0, losses[index - 1])
+        entirely_flat = index >= 599 and flat[index - 1] == 0 and magnitudes[index - 1] == 0
+        result[index] = 50.0 if entirely_flat or not up + down else 100 * up / (up + down)
+    return result

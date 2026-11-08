@@ -115,6 +115,8 @@ def html_report(result, study=None):
     escape = html.escape
     data = result.get("analytics") or analytics(result)
     symbol, quote = result["settings"]["symbol"], result["quote"]
+    strategy_name = result["settings"].get("strategy", "trend_signals").replace("_", " ")
+    exit_mode = result["settings"].get("exit_mode", "ladder_only").replace("_", " ")
     summary = result["summary"]
     metrics = [
         ("Net P&L", formatted(summary["net_pnl"], " " + quote)),
@@ -186,8 +188,9 @@ main{{max-width:1100px;margin:auto;padding:32px}}h1{{font-size:32px}}h2{{margin-
 strong,span{{display:block}}strong{{font-size:23px}}svg{{width:100%;box-sizing:border-box}}
 table{{width:100%;border-collapse:collapse;background:white}}td,th{{text-align:left;padding:12px;
 border-bottom:1px solid #dce3dc}}p,li{{max-width:90ch}}@media print{{body{{background:white}}}}
-</style></head><body><main><h1>{escape(symbol)} · Backtest report</h1>
-<p>{escape(result["source"])}<br>{escape(period)}</p><div class="metrics">{cards}</div>
+</style></head><body><main><h1>{escape(symbol)} · {escape(strategy_name)}</h1>
+<p>{escape(result["source"])}<br>{escape(period)}<br>Exit policy: {escape(exit_mode)}</p>
+<div class="metrics">{cards}</div>
 <h2>Equity after fees</h2><svg viewBox="0 0 1000 270" role="img" aria-label="Equity curve">
 <polyline points="{coordinates}" fill="none" stroke="#267451" stroke-width="2"/></svg>
 <h2>Monthly returns</h2><p>* Partial month</p>
@@ -232,7 +235,8 @@ def quantstats_report(result, path):
                 benchmark=None,
                 rf=0,
                 periods_per_year=365,
-                title=f"{result['settings']['symbol']} · UTC daily returns",
+                title=f"{result['settings']['symbol']} · "
+                f"{result['settings']['strategy'].replace('_', ' ')} · UTC daily returns",
                 output=str(path),
                 download_filename=str(path),
                 compounded=True,

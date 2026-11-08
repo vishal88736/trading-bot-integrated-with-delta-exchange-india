@@ -11,7 +11,7 @@ Open **Backtest** and choose a **Test type**. All four modes use the same replay
 | Compare parameters      | One or two UI axes with comma-separated numeric values       | Per-combination results, in-sample ranking, heatmap, and individual ledgers                            |
 | Walk-forward validation | Parameter grid, initial training percentage, test fold count | Earlier-data selection, subsequent untouched test folds, and a combined out-of-sample equity curve     |
 
-The API permits up to four grid axes. Supported keys: `fast_ema`, `slow_ema`, `cmo_length`, `cmo_threshold`, `atr_length`, `macro_sma`, `sl_atr`, `tp0`, `tp1`, `tp2`. Each axis accepts one to eight unique values; a study is limited to 24 combinations and 96 walk-forward training runs. Test periods remain limited to 366 days.
+The API permits up to four grid axes. Parameter selectors offer numeric settings relevant to the selected strategy and filters, including the [new strategy catalogue](strategies.md). The API rejects inactive parameters. Shared risk/target axes include `atr_length`, `sl_atr`, `tp0`, `tp1`, `tp2`, and `risk_per_trade_percent` when risk sizing is enabled. Each axis accepts one to eight unique values; a study is limited to 24 combinations and 96 walk-forward training runs. Test periods remain limited to 366 days. Exact field names and bounds are available in the local API schema at `/openapi.json`.
 
 Comparison rankings use return, daily Sharpe, daily Sortino, or Calmar. A minimum closed-trade count is editable. Undefined metrics, too few trades, or failed signal checks exclude a run from ranking; its results remain visible. Invalid settings are listed separately. A winning in-sample combination is not evidence of future profitability.
 

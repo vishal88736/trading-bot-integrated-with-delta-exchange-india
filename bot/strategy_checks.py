@@ -5,14 +5,11 @@ import math
 
 from bot.models import RESOLUTIONS
 from bot.research import Cancelled
-from strategies.custom_strategy import CustomStrategy
-from strategies.trend_signals import TrendSignals
+from strategies.catalogue import strategy_type
 
 
 def lookahead_check(request, candles, higher, result, progress=None, factory=None):
-    make = factory or (
-        TrendSignals if request.settings.strategy == "trend_signals" else CustomStrategy
-    )
+    make = factory or strategy_type(request.settings.strategy)
     strategy = make(request.settings)
     if not hasattr(strategy, "prepare"):
         return {
@@ -54,6 +51,14 @@ def lookahead_check(request, candles, higher, result, progress=None, factory=Non
                     and reference.time == streamed.time
                     and math.isclose(reference.atr, streamed.atr, rel_tol=1e-8, abs_tol=1e-8)
                 )
+            if hasattr(prepared, "exit_at"):
+                fresh = make(request.settings)
+                lower = candles[max(0, index - 599) : index + 1]
+                upper = higher[max(0, end - 600) : end]
+                for side in ("buy", "sell"):
+                    same = same and (
+                        prepared.exit_at(index, side) == fresh.exit_reason(side, lower, upper)
+                    )
             if not same:
                 mismatches.append({"time": candles[index].time})
         return {

@@ -2452,3 +2452,26 @@ td details li {
     flex: 1;
   }
 }
+.strategy-recipe-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 0 22px;
+}
+.strategy-recipe-row .form-note {
+  margin: 0;
+  max-width: 75ch;
+}
+.strategy-recipe-row button {
+  flex-shrink: 0;
+}
+.inactive-field {
+  opacity: 0.65;
+}
+@media (max-width: 700px) {
+  .strategy-recipe-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

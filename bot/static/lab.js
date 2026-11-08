@@ -14,6 +14,12 @@ const researchParameters = {
   tp0: "TP1 ATR multiplier",
   tp1: "TP2 ATR multiplier",
   tp2: "TP3 ATR multiplier",
+  ...Object.fromEntries(
+    EXTRA_STRATEGY_FIELDS.filter(
+      (field) =>
+        field[3] === "number" && !["paper_capital_quote"].includes(field[1]),
+    ).map((field) => [field[1], field[2]]),
+  ),
 };
 for (const axis of ["x", "y"]) {
   const select = $("research-axis-" + axis);
@@ -22,6 +28,48 @@ for (const axis of ["x", "y"]) {
     select.add(new Option(label, key));
   select.value = axis === "x" ? "fast_ema" : "sl_atr";
 }
+let researchAxisStrategy = null;
+function updateResearchAxes() {
+  updateStrategyFields("backtest-setting-");
+  const name = $("backtest-setting-strategy").value;
+  const preferred = {
+    trend_signals: ["fast_ema", "7, 9, 12"],
+    custom_strategy: ["fast_ema", "7, 9, 12"],
+    momentum_breakout: ["breakout_lookback", "15, 20, 25"],
+    ema_trend: ["trend_fast_period", "40, 50, 60"],
+    rsi_reversion: ["rsi_length", "7, 14, 21"],
+    smc_price_action: ["smc_swing_length", "10, 20, 30"],
+  }[name];
+  const choices = Object.entries(researchParameters).filter(([key]) => {
+    const input = $("backtest-setting-" + key);
+    return input && !input.parentElement.classList.contains("hidden");
+  });
+  for (const axis of ["x", "y"]) {
+    const select = $("research-axis-" + axis),
+      old = select.value;
+    select.replaceChildren();
+    if (axis === "y") select.add(new Option("One parameter only", ""));
+    for (const [key, label] of choices) select.add(new Option(label, key));
+    select.value = old;
+    if (
+      select.selectedIndex < 0 ||
+      (axis === "x" && researchAxisStrategy !== name)
+    ) {
+      select.value = axis === "x" ? preferred[0] : "sl_atr";
+      $("research-values-" + axis).value =
+        axis === "x" ? preferred[1] : "1.5, 2, 2.5";
+    }
+  }
+  researchAxisStrategy = name;
+}
+for (const key of [
+  "strategy",
+  "htf_filter",
+  "sizing_mode",
+  "smc_zone_type",
+  "rsi_range_filter",
+])
+  $("backtest-setting-" + key).addEventListener("change", updateResearchAxes);
 
 function updateResearchControls() {
   const mode = $("research-mode").value;
@@ -388,7 +436,11 @@ function renderResearchJob(job) {
   const selected = study.rows.find((row) => row.id === researchSelection);
   if (selected && backtestResult)
     $("bt-result-title").textContent =
-      backtestResult.settings.symbol + " · " + selected.label;
+      backtestResult.settings.symbol +
+      " · " +
+      STRATEGY_NAMES[backtestResult.settings.strategy] +
+      " · " +
+      selected.label;
   if (backtestResult) renderResearchAnalytics(backtestResult);
 }
 
@@ -444,7 +496,13 @@ async function downloadResearchReport(format) {
     const link = document.createElement("a");
     link.href = url;
     link.download =
-      "delta-" + backtestResult.settings.symbol + "-" + format + ".html";
+      "delta-" +
+      backtestResult.settings.symbol +
+      "-" +
+      backtestResult.settings.strategy +
+      "-" +
+      format +
+      ".html";
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (error) {

@@ -166,7 +166,7 @@ async function dashboard(t, account = ready, status = initial, hash = "") {
     } else data = { saved: true };
     return { ok: true, json: async () => structuredClone(data) };
   };
-  for (const file of ["app.js", "research.js", "lab.js"])
+  for (const file of ["strategies.js", "app.js", "research.js", "lab.js"])
     new vm.Script(readFileSync(`bot/static/${file}`, "utf8"), {
       filename: file,
     }).runInContext(dom.getInternalVMContext());
@@ -321,6 +321,18 @@ test("completed studies display their selected run and preserve row selection on
 
 test("risk reports label daily metrics, partial months, cache provenance and sampled checks", async (t) => {
   const { w, document: d } = await dashboard(t);
+  const named = researchResult();
+  named.settings.strategy = "ema_trend";
+  w.setBacktestJob({
+    run_id: "named-run",
+    status: "completed",
+    message: "Complete",
+    result: named,
+  });
+  assert.match(
+    d.getElementById("bt-result-title").textContent,
+    /EMA trend following/,
+  );
   w.setBacktestJob({
     run_id: "report-run",
     status: "completed",
@@ -363,6 +375,96 @@ test("cancelling research uses its own endpoint and leaves trading controls alon
       ["/api/stop", "/api/start", "/api/reconcile"].includes(call.url),
     ),
   );
+});
+
+test("all four new strategies expose their own editable controls and research axes", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  const selector = d.getElementById("backtest-setting-strategy");
+  for (const [strategy, field, axis] of [
+    ["momentum_breakout", "breakout_lookback", "breakout_lookback"],
+    ["ema_trend", "trend_fast_period", "trend_fast_period"],
+    ["smc_price_action", "smc_swing_length", "smc_swing_length"],
+    ["rsi_reversion", "rsi_length", "rsi_length"],
+  ]) {
+    selector.value = strategy;
+    selector.dispatchEvent(new w.Event("change"));
+    assert.equal(d.getElementById("backtest-setting-" + field).disabled, false);
+    assert.equal(d.getElementById("backtest-setting-fast_ema").disabled, true);
+    assert.equal(d.getElementById("research-axis-x").value, axis);
+    assert.equal(
+      w.readSettings(initial.settings, "backtest-setting-").strategy,
+      strategy,
+    );
+  }
+  assert.ok(
+    !calls.some((call) => ["/api/start", "/api/settings"].includes(call.url)),
+  );
+});
+
+test("strategy presets change form values without saving or changing execution mode", async (t) => {
+  const { w, document: d, calls, state } = await dashboard(t);
+  w.openSettings();
+  d.getElementById("setting-strategy").value = "ema_trend";
+  d.getElementById("setting-strategy").dispatchEvent(new w.Event("change"));
+  d.getElementById("setting-sizing_mode").value = "risk_percent";
+  d.getElementById("setting-sizing_mode").dispatchEvent(new w.Event("change"));
+  d.getElementById("setting-risk_per_trade_percent").value = "1.5";
+  d.getElementById("strategy-preset").click();
+  assert.equal(d.getElementById("setting-timeframe").value, "4h");
+  assert.equal(d.getElementById("setting-higher_timeframe").value, "1d");
+  assert.equal(d.getElementById("setting-trend_fast_period").value, "50");
+  assert.equal(d.getElementById("setting-risk_per_trade_percent").value, "1.5");
+  assert.equal(d.getElementById("setting-sizing_mode").value, "risk_percent");
+  assert.equal(d.getElementById("setting-mode").value, "paper");
+  assert.equal(state.settings.strategy, "trend_signals");
+  assert.ok(
+    !calls.some((call) => ["/api/start", "/api/settings"].includes(call.url)),
+  );
+});
+
+test("daily entries can disable higher-timeframe confirmation and hidden invalid fields", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  const selector = d.getElementById("backtest-setting-strategy");
+  selector.value = "rsi_reversion";
+  selector.dispatchEvent(new w.Event("change"));
+  d.getElementById("backtest-setting-rsi_length").value = "0";
+  selector.value = "ema_trend";
+  selector.dispatchEvent(new w.Event("change"));
+  d.getElementById("backtest-setting-htf_filter").value = "disabled";
+  d.getElementById("backtest-setting-htf_filter").dispatchEvent(
+    new w.Event("change"),
+  );
+  d.getElementById("backtest-setting-timeframe").value = "1d";
+  const settings = w.readSettings(initial.settings, "backtest-setting-");
+  assert.equal(settings.rsi_length, 14);
+  assert.equal(
+    d.getElementById("backtest-setting-higher_timeframe").disabled,
+    true,
+  );
+  assert.equal(w.settingsIssue(settings), null);
+});
+
+test("automation flow labels describe the selected strategy and risk sizing", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  const state = structuredClone(initial);
+  state.settings = {
+    ...state.settings,
+    strategy: "rsi_reversion",
+    htf_filter: "disabled",
+    sizing_mode: "risk_percent",
+    risk_per_trade_percent: 1.5,
+  };
+  w.render(state);
+  assert.match(
+    d.getElementById("flow-trend-title").textContent,
+    /RSI reversion/,
+  );
+  assert.doesNotMatch(
+    d.getElementById("flow-momentum-title").textContent,
+    /CMO/,
+  );
+  assert.equal(d.getElementById("flow-macro").textContent, "Filter off");
+  assert.match(d.getElementById("flow-size").textContent, /1.5% planned risk/);
 });
 
 test("navigation restores the selected page from the URL", async (t) => {

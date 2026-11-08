@@ -5,11 +5,10 @@ import uuid
 from pathlib import Path
 
 from bot.models import RESOLUTIONS, State
-from bot.risk import next_stop, trade_plan
+from bot.risk import entry_size, next_stop, trade_plan
 from bot.settings import Settings, atomic_json
 from clients.delta import Delta, DeltaError, UncertainOrder, contract_size, tick_price
-from strategies.custom_strategy import CustomStrategy
-from strategies.trend_signals import TrendSignals
+from strategies.catalogue import create_strategy, direction_allowed
 
 
 class Engine:
@@ -33,9 +32,7 @@ class Engine:
             self.state.last_candle = 0
         if self.state.pending:
             raise UncertainOrder("An unfinished exchange action needs flat-account reconciliation")
-        self.strategy = (TrendSignals if settings.strategy == "trend_signals" else CustomStrategy)(
-            settings
-        )
+        self.strategy = create_strategy(settings)
         self.product = client.product(settings.symbol)
         self.multiplier = float(self.product["contract_value"])
         self.tick = self.product["tick_size"]
@@ -152,11 +149,36 @@ class Engine:
         s = self.settings
         if self.state.position or self.state.realized_quote <= -s.max_loss_quote:
             return
-        plan = trade_plan(s, signal, price, self.tick)
-        if (
-            s.contracts > s.max_contracts
-            or price * s.contracts * self.multiplier > s.max_notional_quote
-        ):
+        if not direction_allowed(s, signal.side):
+            return
+        equity = available = max(0, s.paper_capital_quote + self.state.realized_quote)
+        if s.sizing_mode == "risk_percent" and s.mode == "demo":
+            from bot.account import normalize
+
+            settlement = (self.product.get("settling_asset") or {}).get("symbol")
+            if settlement != self.quote:
+                raise DeltaError("Risk sizing requires matching settlement and quote assets")
+            balances = [
+                row
+                for row in normalize("balances", self.client.balances())
+                if row["asset"] == self.quote
+            ]
+            if (
+                len(balances) != 1
+                or balances[0]["balance"] is None
+                or balances[0]["available_balance"] is None
+            ):
+                raise DeltaError("Quote wallet balance is unconfirmed; risk sizing paused")
+            equity, available = balances[0]["balance"], balances[0]["available_balance"]
+        sizing = entry_size(
+            s, signal, price, self.tick, self.multiplier, equity, available, s.paper_fee_bps
+        )
+        quantity = sizing["quantity"]
+        if not quantity:
+            self.event("risk_block", reason="Risk budget cannot fund a four-contract ladder")
+            return
+        plan = trade_plan(s, signal, price, self.tick, quantity)
+        if quantity > s.max_contracts or price * quantity * self.multiplier > s.max_notional_quote:
             self.event("risk_block", reason="Position or quote-notional limit exceeded")
             return
         if s.mode == "demo":
@@ -164,22 +186,23 @@ class Engine:
             self.client.set_leverage(self.product_id, s.leverage)
             self.state.pending = None
             self.save()
-        fill, fee = self.fill(signal.side, s.contracts, price, tick_price(plan.stop, self.tick))
+        fill, fee = self.fill(signal.side, quantity, price, tick_price(plan.stop, self.tick))
         if abs(fill - price) / price * 10000 > s.max_entry_slippage_bps:
             raise UncertainOrder(
                 "Demo entry exceeded configured slippage; native initial SL remains, reconcile"
             )
-        self.state.position = trade_plan(s, signal, fill, self.tick)
+        self.state.position = trade_plan(s, signal, fill, self.tick, quantity)
         self.state.realized_quote -= fee
         self.protect(self.state.position.stop)
         self.event(
             "entry",
             side=signal.side,
             price=fill,
-            quantity=s.contracts,
+            quantity=quantity,
             stop=self.state.position.stop,
             targets=self.state.position.targets,
             reason=signal.reason,
+            sizing=sizing,
         )
 
     def close_quantity(self, quantity, price, reason):
@@ -230,12 +253,29 @@ class Engine:
         # Mark every inspected close, including closes processed while a trade is open.
         self.state.last_candle = latest.time
         self.save()
-        if had_position or self.state.position:
-            return
         age = now - latest.time - RESOLUTIONS[self.settings.timeframe]
         if age > max(30, self.settings.poll_seconds * 2):
             return  # Do not enter a historical signal when starting/recovering mid-candle.
-        higher = self.client.candles(self.settings.symbol, self.settings.higher_timeframe, now=now)
+        if had_position and not self.state.position:
+            return
+        if self.state.position and (
+            self.settings.exit_mode == "ladder_only" or not hasattr(self.strategy, "exit_reason")
+        ):
+            return
+        higher = (
+            self.client.candles(self.settings.symbol, self.settings.higher_timeframe, now=now)
+            if self.settings.requires_higher_history()
+            else []
+        )
+        if self.state.position:
+            if self.settings.exit_mode != "ladder_only" and hasattr(self.strategy, "exit_reason"):
+                reason = self.strategy.exit_reason(self.state.position.side, candles, higher)
+                if reason:
+                    details = self.close_quantity(self.state.position.remaining, price, reason)
+                    self.event("strategy_exit", reason=reason, **details)
+            return
+        if had_position:
+            return
         signal = self.strategy.evaluate(candles, higher)
         if signal:
             if signal.time != latest.time:

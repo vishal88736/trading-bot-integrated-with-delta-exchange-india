@@ -40,6 +40,7 @@ function showNotice(message, error = false) {
   $("notice").classList.toggle("error", error);
 }
 function render(data) {
+  data.settings = normalizeStrategySettings(data.settings);
   current = data;
   const s = data.settings,
     p = data.state.position,
@@ -107,6 +108,7 @@ function render(data) {
     : p
       ? "PAUSED"
       : "READY";
+  renderStrategyFlow(s);
   $("ladder-initial").textContent = `SL at ${s.sl_atr} × ATR`;
   $("start-button").disabled = data.running;
   $("stop-button").disabled = !data.running;
@@ -321,12 +323,7 @@ const fields = [
   ["strategy", "symbol", "Market symbol", "text"],
   ["strategy", "timeframe", "Signal timeframe", timeframes],
   ["strategy", "higher_timeframe", "Higher timeframe", timeframes],
-  [
-    "strategy",
-    "strategy",
-    "Entry strategy",
-    ["trend_signals", "custom_strategy"],
-  ],
+  ["strategy", "strategy", "Entry strategy", Object.keys(STRATEGY_NAMES)],
   ["strategy", "fast_ema", "Fast EMA", "number", 2, 200],
   ["strategy", "slow_ema", "Slow EMA", "number", 3, 500],
   ["strategy", "cmo_length", "CMO length", "number", 2, 200],
@@ -377,6 +374,7 @@ const fields = [
     0.1,
   ],
   ["risk", "paper_fee_bps", "Paper fee estimate (bps)", "number", 0, 100, 0.1],
+  ...EXTRA_STRATEGY_FIELDS,
 ];
 for (const [section, key, title, kind, min, max, step] of fields) {
   const label = document.createElement("label");
@@ -392,11 +390,13 @@ for (const [section, key, title, kind, min, max, step] of fields) {
       const option = document.createElement("option");
       option.value = value;
       option.textContent =
-        key === "mode"
-          ? value === "paper"
-            ? "Paper — local simulation"
-            : "Demo — orders at Delta demo"
-          : value.replaceAll("_", " ");
+        key === "strategy"
+          ? STRATEGY_NAMES[value]
+          : key === "mode"
+            ? value === "paper"
+              ? "Paper — local simulation"
+              : "Demo — orders at Delta demo"
+            : value.replaceAll("_", " ");
       input.append(option);
     }
   } else {
@@ -452,10 +452,10 @@ function wireTabs(selector, dataKey, onSelect) {
   });
 }
 function readSettings(base, prefix = "setting-") {
-  const settings = structuredClone(base);
+  const settings = normalizeStrategySettings(structuredClone(base));
   for (const [, key, , kind] of fields) {
     const input = $(`${prefix}${key}`);
-    if (!input) continue;
+    if (!input || input.disabled) continue;
     if (key === "symbol") input.value = input.value.trim().toUpperCase();
     const value = kind === "number" ? Number(input.value) : input.value;
     if (key.startsWith("tp")) settings.tp_atr[Number(key[2])] = value;
@@ -469,7 +469,10 @@ function settingsIssue(s) {
       key: "symbol",
       message: "Enter a Delta market symbol, such as BTCUSD or ETHUSD.",
     };
-  if (timeframeSeconds[s.higher_timeframe] <= timeframeSeconds[s.timeframe])
+  if (
+    (isLegacyStrategy(s.strategy) || s.htf_filter === "enabled") &&
+    timeframeSeconds[s.higher_timeframe] <= timeframeSeconds[s.timeframe]
+  )
     return {
       key: "higher_timeframe",
       message: "Higher timeframe must be larger than the signal timeframe.",
@@ -478,6 +481,18 @@ function settingsIssue(s) {
     return {
       key: "fast_ema",
       message: "Fast EMA must be shorter than slow EMA.",
+    };
+  if (s.trend_fast_period >= s.trend_slow_period)
+    return {
+      key: "trend_fast_period",
+      message: "Trend fast EMA must be shorter than trend slow EMA.",
+    };
+  if (!(
+    s.rsi_oversold < s.rsi_exit_level && s.rsi_exit_level < s.rsi_overbought
+  ))
+    return {
+      key: "rsi_exit_level",
+      message: "RSI levels must satisfy oversold < exit < overbought.",
     };
   if (!(
     0 < s.tp_atr[0] &&
@@ -488,7 +503,7 @@ function settingsIssue(s) {
       key: "tp0",
       message: "Set targets in increasing order: TP1 < TP2 < TP3.",
     };
-  if (s.contracts > s.max_contracts)
+  if (s.sizing_mode === "fixed_contracts" && s.contracts > s.max_contracts)
     return {
       key: "max_contracts",
       message: "Maximum position contracts must cover the contracts per trade.",
@@ -510,6 +525,14 @@ function updateRiskPreview(prefix, id) {
   $(id).textContent = valid
     ? `Target reward/risk: ${targets.map((n) => `${number(n / stop)}R`).join(" / ")}. Partial exits: ${Math.floor(contracts / 2)} / ${Math.floor(contracts / 4)} / ${contracts - Math.floor(contracts / 2) - Math.floor(contracts / 4)} contracts.`
     : "Set a positive stop, increasing targets, and at least four contracts to preview this trade.";
+  if ($(prefix + "sizing_mode")?.value === "risk_percent")
+    $(id).textContent =
+      "Planned risk " +
+      $(prefix + "risk_per_trade_percent").value +
+      "% with a " +
+      $(prefix + "max_contracts").value +
+      "-contract cap. Quantity includes stop distance and cost reserves; trades below four " +
+      "contracts are skipped. TP1 → entry, TP2 → TP1; gaps can exceed planned risk.";
 }
 function revealSettingsError(input, message) {
   const section = input.closest(".form-section");
@@ -525,6 +548,7 @@ function openSettings(tab = "strategy") {
     $(`setting-${key}`).value = key.startsWith("tp")
       ? s.tp_atr[Number(key[2])]
       : s[key];
+  updateStrategyFields("setting-");
   $("credential-status").textContent = current.credentials_configured
     ? "Demo credentials are saved. Fields stay empty to protect your secrets."
     : "No demo credentials saved. Paper mode works without them.";

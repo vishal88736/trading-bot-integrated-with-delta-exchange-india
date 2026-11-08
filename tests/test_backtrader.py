@@ -75,8 +75,8 @@ def test_checker_detects_broken_dashboard_stop_ladder(reference, monkeypatch):
 def test_checker_detects_broken_dashboard_partial_allocations(reference, monkeypatch):
     original = replay.trade_plan
 
-    def wrong_quantities(settings, signal, entry, tick):
-        position = original(settings, signal, entry, tick)
+    def wrong_quantities(settings, signal, entry, tick, quantity=None):
+        position = original(settings, signal, entry, tick, quantity)
         if settings.contracts == 4:
             position.quantities = [1, 1, 2]
         return position

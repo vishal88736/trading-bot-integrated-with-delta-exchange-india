@@ -342,7 +342,12 @@ $("test-connection").onclick = () => refreshAccount(true);
 document.addEventListener("credentials-saved", () => refreshAccount(true));
 
 for (const [section, key] of fields) {
-  if (["mode", "poll_seconds", "paper_fee_bps"].includes(key)) continue;
+  if (
+    ["mode", "poll_seconds", "paper_fee_bps", "paper_capital_quote"].includes(
+      key,
+    )
+  )
+    continue;
   const copy = $(`setting-${key}`).parentElement.cloneNode(true);
   const input = copy.querySelector("input,select");
   input.id = `backtest-setting-${key}`;
@@ -363,10 +368,7 @@ for (const [section, key] of fields) {
     copy.firstChild.textContent = label;
     if (key === "strategy")
       for (const option of input.options)
-        option.textContent =
-          option.value === "trend_signals"
-            ? "Trend signals"
-            : "Custom strategy";
+        option.textContent = STRATEGY_NAMES[option.value];
   }
   $(primary ? "backtest-market-inputs" : `backtest-${section}-inputs`).append(
     copy,
@@ -377,6 +379,18 @@ function updateBacktestSummary() {
   $("backtest-config-summary").textContent =
     `EMA ${value("fast_ema")} / ${value("slow_ema")} · CMO ${value("cmo_length")} · ATR ${value("atr_length")} · ${value("contracts")} contracts · ${$("backtest-fee").value} bps fee`;
   updateRiskPreview("backtest-setting-", "backtest-risk-preview");
+  updateStrategyFields("backtest-setting-");
+  if (typeof updateResearchAxes === "function") updateResearchAxes();
+  if (!isLegacyStrategy(value("strategy")))
+    $("backtest-config-summary").textContent =
+      STRATEGY_NAMES[value("strategy")] +
+      " · ATR " +
+      value("atr_length") +
+      " · " +
+      value("sizing_mode").replaceAll("_", " ") +
+      " · " +
+      $("backtest-fee").value +
+      " bps fee";
 }
 function selectBacktestSettings(tab) {
   document.querySelectorAll("[data-bt-settings]").forEach((button) => {
@@ -610,6 +624,7 @@ function updateBacktestControls() {
       ? "Replaying history…"
       : "Run backtest ▶";
   if (typeof updateResearchControls === "function") updateResearchControls();
+  updateStrategyFields("backtest-setting-");
 }
 function setBacktestJob(job) {
   backtestRunning = job.status === "running";
@@ -670,9 +685,20 @@ function renderBacktest(result) {
     `${result.settings.symbol} · ${result.settings.timeframe} backtest`;
   $("bt-result-source").textContent = result.source;
   const summary = result.summary;
+  const strategyLabel =
+    STRATEGY_NAMES[result.settings.strategy] || result.settings.strategy;
+  $("bt-result-title").textContent =
+    result.settings.symbol +
+    " · " +
+    strategyLabel +
+    " · " +
+    result.settings.timeframe;
   if (result.walk_forward)
     $("bt-result-title").textContent =
-      result.settings.symbol + " · Walk-forward out-of-sample";
+      result.settings.symbol +
+      " · " +
+      strategyLabel +
+      " · Walk-forward out-of-sample";
   if (typeof renderResearchAnalytics === "function")
     renderResearchAnalytics(result);
   $("bt-pnl").textContent = `${number(summary.net_pnl)} ${result.quote}`;
@@ -956,7 +982,12 @@ $("backtest-export").onclick = () => {
   );
   const link = document.createElement("a");
   link.href = url;
-  link.download = `delta-backtest-${backtestResult.settings.symbol}.json`;
+  link.download =
+    "delta-backtest-" +
+    backtestResult.settings.symbol +
+    "-" +
+    backtestResult.settings.strategy +
+    ".json";
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 };
