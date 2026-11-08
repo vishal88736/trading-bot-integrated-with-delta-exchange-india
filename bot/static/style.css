@@ -109,6 +109,30 @@ a {
   gap: 9px;
   font-size: 12px;
 }
+.header-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+.execution-mode-pill {
+  padding: 8px 12px;
+  border: 1px solid #d9e2d8;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.execution-mode-pill[data-mode="paper"] {
+  background: #fff5e3;
+  border-color: #e5d2ac;
+  color: #775728;
+}
+.execution-mode-pill[data-mode="demo"] {
+  background: #e9f3eb;
+  color: #245e46;
+}
 .dot {
   display: inline-block;
   width: 6px;
@@ -1424,6 +1448,51 @@ dialog {
 .paper-position-panel {
   margin-top: 22px;
   border-color: #b8cdbb;
+}
+.paper-mode-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 16px;
+  background: #fff8eb;
+  border-color: #e5d2ac;
+  color: #6d532c;
+}
+.paper-mode-context p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.position-count {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: #eef3eb;
+  color: #405547;
+  font-size: 13px;
+}
+@media (max-width: 1200px) {
+  .topbar {
+    height: auto;
+    min-height: 78px;
+    flex-wrap: wrap;
+    row-gap: 12px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+  .topbar nav {
+    display: flex;
+    order: 3;
+    flex-basis: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .header-status {
+    margin-left: auto;
+  }
 }
 .data-freshness {
   font-size: 12px;

@@ -1,18 +1,19 @@
 import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.exceptions import RequestValidationError
 from filelock import FileLock, Timeout
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from bot.service import Service
 from bot.backtest import BacktestRequest
+from bot.service import Service
 from bot.settings import Settings, atomic_json
 from clients.delta import DeltaError
 
@@ -23,6 +24,12 @@ class Credentials(BaseModel):
     model_config = ConfigDict(extra="forbid")
     api_key: SecretStr = Field(min_length=1, max_length=512)
     api_secret: SecretStr = Field(min_length=1, max_length=512)
+
+
+class StartRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    expected_mode: Literal["paper", "demo"] | None = None
+    confirm_demo: bool = False
 
 
 def create_app(root: Path = Path(".runtime")):
@@ -141,8 +148,8 @@ def create_app(root: Path = Path(".runtime")):
         return service.backtests.start(value)
 
     @app.post("/api/start")
-    def start():
-        service.start()
+    def start(value: StartRequest):
+        service.start(confirm_demo=value.confirm_demo, expected_mode=value.expected_mode)
         return {"started": True}
 
     @app.post("/api/stop")

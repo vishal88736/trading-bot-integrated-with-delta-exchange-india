@@ -6,11 +6,11 @@ import json
 import math
 import re
 import time
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 import requests
 
-from bot.models import Candle, RESOLUTIONS
+from bot.models import RESOLUTIONS, Candle
 
 DEMO_URL = "https://cdn-ind.testnet.deltaex.org"
 
@@ -37,6 +37,22 @@ def tick_price(price: float, tick: str) -> str:
     if rounded <= 0:
         raise ValueError("Rounded order price is not positive")
     return format(rounded, "f")
+
+
+def contract_size(value):
+    """Read whole signed contract counts without silently truncating partial data."""
+    try:
+        number = Decimal(str(value))
+        if (
+            isinstance(value, bool)
+            or not number.is_finite()
+            or number != number.to_integral_value()
+            or abs(number) > 2**63 - 1
+        ):
+            raise ValueError
+        return int(number)
+    except (InvalidOperation, TypeError, ValueError):
+        raise DeltaError("Exchange contract quantity is invalid") from None
 
 
 class Delta:
@@ -162,7 +178,7 @@ class Delta:
         result = list({c.time: c for c in result}.values())[-count:]
         if not result or now - (result[-1].time + interval) > interval * 2:
             raise DeltaError(f"Missing or stale {resolution} demo candles")
-        if any(b.time - a.time != interval for a, b in zip(result, result[1:])):
+        if any(b.time - a.time != interval for a, b in zip(result, result[1:], strict=False)):
             raise DeltaError(f"Gaps in {resolution} demo candle history; entries paused")
         return result
 
@@ -225,7 +241,8 @@ class Delta:
                     result[candle.time] = candle
             if any(timestamp not in result for timestamp in range(cursor, boundary, interval)):
                 raise DeltaError(
-                    f"Incomplete {resolution} history in the requested period; choose another source or later start date"
+                    f"Incomplete {resolution} history in the requested period; "
+                    "choose another source or later start date"
                 )
             cursor = boundary
             if progress:
@@ -236,7 +253,7 @@ class Delta:
             or not ordered
             or ordered[0].time != first
             or ordered[-1].time != end - interval
-            or any(b.time - a.time != interval for a, b in zip(ordered, ordered[1:]))
+            or any(b.time - a.time != interval for a, b in zip(ordered, ordered[1:], strict=False))
         ):
             raise DeltaError(
                 f"Incomplete {resolution} history. Choose another source or a later start date"
@@ -270,12 +287,25 @@ class Delta:
         return self.request("POST", "/v2/orders", body=body, auth=True)
 
     def set_leverage(self, product_id, leverage):
-        return self.request(
+        receipt = self.request(
             "POST",
             f"/v2/products/{product_id}/orders/leverage",
             body={"leverage": str(leverage)},
             auth=True,
         )
+        try:
+            actual = float(receipt["leverage"])
+            confirmed = (
+                not isinstance(receipt["leverage"], bool)
+                and math.isfinite(actual)
+                and actual == leverage
+                and str(receipt.get("product_id", product_id)) == str(product_id)
+            )
+        except (KeyError, TypeError, ValueError):
+            confirmed = False
+        if not confirmed:
+            raise UncertainOrder("Demo leverage update was not confirmed; inspect the account")
+        return receipt
 
     def protect(self, product_id, stop):
         # Edit the existing native stop; only one position bracket is allowed.
@@ -296,7 +326,16 @@ class Delta:
                     },
                     auth=True,
                 )
-                if Decimal(str(receipt.get("stop_price", 0))) != Decimal(stop):
+                try:
+                    price = Decimal(str(receipt["stop_price"]))
+                    confirmed = (
+                        price.is_finite()
+                        and price == Decimal(stop)
+                        and str(receipt.get("id")) == str(stops[0]["id"])
+                    )
+                except (KeyError, InvalidOperation, TypeError, ValueError):
+                    confirmed = False
+                if not confirmed:
                     raise UncertainOrder("Demo stop update was not confirmed; inspect the account")
                 return receipt
             if len(stops) > 1:

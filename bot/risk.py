@@ -11,7 +11,7 @@ def trade_plan(settings, signal, entry, tick):
     ]
     if not (
         direction * (entry - stop) > 0
-        and all(direction * (b - a) > 0 for a, b in zip([entry] + targets, targets))
+        and all(direction * (b - a) > 0 for a, b in zip([entry] + targets, targets, strict=False))
     ):
         raise DeltaError("ATR levels collapse at the product tick size; increase target distances")
     quantities = [settings.contracts // 2, settings.contracts // 4]
@@ -19,5 +19,6 @@ def trade_plan(settings, signal, entry, tick):
     return Position(signal.side, entry, stop, targets, quantities, settings.contracts)
 
 
-def next_stop(position):
-    return position.entry if position.stage == 1 else position.targets[position.stage - 2]
+def next_stop(position, tick):
+    price = position.entry if position.stage == 1 else position.targets[position.stage - 2]
+    return float(tick_price(price, tick))

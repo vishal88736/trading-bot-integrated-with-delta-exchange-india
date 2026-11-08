@@ -35,6 +35,7 @@ def report(reference):
         "initial_stop_before_target",
         "odd_contracts_tick_and_multiplier",
         "no_signal",
+        "fractional_entry_stop_tick",
     ],
 )
 def test_independent_broker_matches_dashboard_execution(report, side, case):
@@ -56,9 +57,15 @@ def test_broker_stop_ladder_and_partial_quantities_have_known_expected_values(re
     assert trade["net_pnl"] == pytest.approx(79.56 if side == "buy" else 79.64)
 
 
+@pytest.mark.parametrize("side", ["buy", "sell"])
+def test_broker_rounds_fractional_entry_break_even_to_tick(report, side):
+    trade = report["checks"][f"{side}_fractional_entry_stop_tick"]["reference"]["trades"][0]
+    assert trade["stop_updates"][0]["stop"] == 100.0
+
+
 def test_checker_detects_broken_dashboard_stop_ladder(reference, monkeypatch):
     # Break TP2 -> TP1 in our engine only. Backtrader must keep its own correct ladder.
-    monkeypatch.setattr(replay, "next_stop", lambda position: position.entry)
+    monkeypatch.setattr(replay, "next_stop", lambda position, tick: position.entry)
     report = check_scenarios(reference)
     assert report["status"] == "mismatch"
     assert not report["checks"]["buy_tp2_then_tp1_stop"]["passed"]

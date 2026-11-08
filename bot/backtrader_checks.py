@@ -57,12 +57,15 @@ def scenarios():
             {"atr": 2.63, "contracts": 7, "multiplier": 0.01, "tick": "0.25"},
         ),
         ("no_signal", (target1, target2, target3, sentinel), {"signal": False}),
+        ("fractional_entry_stop_tick", (target1, target2, target3, sentinel), {}),
     )
     for side in ("buy", "sell"):
         for name, path, options in paths:
             rows = ((100, 101, 99, 100), (100, 105, 95, 103), *path)
             scale = options.get("atr", 10.0) / 10
             rows = tuple(tuple(100 + (p - 100) * scale for p in row) for row in rows)
+            if name == "fractional_entry_stop_tick":
+                rows = tuple(tuple(price + 0.03 for price in row) for row in rows)
             if side == "sell":
                 rows = tuple((200 - o, 200 - low, 200 - high, 200 - c) for o, high, low, c in rows)
             yield Scenario(f"{side}_{name}", side, rows, **options)
@@ -231,7 +234,9 @@ def broker_run(bt, case, bars):
                 self.trade = None
             elif role.startswith("tp"):
                 self.stage += 1
-                self.stop_price = self.entry if self.stage == 1 else self.targets[self.stage - 2]
+                self.stop_price = (
+                    self.rounded(self.entry) if self.stage == 1 else self.targets[self.stage - 2]
+                )
                 self.trade["stop_updates"].append(
                     {"time": timestamp, "after_target": self.stage, "stop": self.stop_price}
                 )

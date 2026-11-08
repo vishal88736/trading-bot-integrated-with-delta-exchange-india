@@ -1,7 +1,7 @@
 import bisect
 
 from bot.indicators import cmo, windowed_atr, windowed_average
-from bot.models import Candle, RESOLUTIONS, Signal
+from bot.models import RESOLUTIONS, Candle, Signal
 from bot.settings import Settings
 
 

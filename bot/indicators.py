@@ -1,5 +1,8 @@
 """Small, explicit indicator implementations; no opaque TA dependency."""
 
+from collections import deque
+from math import fsum
+
 from bot.models import Candle
 
 
@@ -18,17 +21,15 @@ def ema(values: list[float], length: int) -> list[float | None]:
 
 def cmo(values: list[float], length: int) -> list[float | None]:
     result = [None] * len(values)
-    up = down = 0.0
-    for index in range(length, len(values)):
-        if index == length or index % 1024 == 0:
-            changes = [values[j] - values[j - 1] for j in range(index - length + 1, index + 1)]
-            up = sum(max(change, 0) for change in changes)
-            down = sum(max(-change, 0) for change in changes)
-        else:
-            old = values[index - length] - values[index - length - 1]
-            new = values[index] - values[index - 1]
-            up = max(0.0, up + max(new, 0) - max(old, 0))
-            down = max(0.0, down + max(-new, 0) - max(-old, 0))
+    gains, losses = deque(maxlen=length), deque(maxlen=length)
+    for index in range(1, len(values)):
+        change = values[index] - values[index - 1]
+        gains.append(max(change, 0.0))
+        losses.append(max(-change, 0.0))
+        if index < length:
+            continue
+        # A bounded accurate sum avoids residual +/-100 signals on flat prices.
+        up, down = fsum(gains), fsum(losses)
         result[index] = 100 * (up - down) / (up + down) if up + down else 0.0
     return result
 

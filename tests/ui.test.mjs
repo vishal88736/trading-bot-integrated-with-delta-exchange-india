@@ -364,7 +364,7 @@ test("disconnected account shows no fabricated zero balances", async (t) => {
   );
 });
 
-test("a paused paper position remains visible in Account without inventing exchange holdings", async (t) => {
+test("Account links to a paused paper simulation in Automation without inventing exchange holdings", async (t) => {
   const status = structuredClone(initial);
   status.settings.symbol = "ETHUSD";
   status.state.position = {
@@ -388,6 +388,27 @@ test("a paused paper position remains visible in Account without inventing excha
   );
   d.getElementById("account-tab").click();
   assert.equal(
+    d
+      .getElementById("account-view")
+      .contains(d.getElementById("paper-position-panel")),
+    false,
+  );
+  assert.equal(
+    d
+      .getElementById("automation-view")
+      .contains(d.getElementById("paper-position-panel")),
+    true,
+  );
+  assert.equal(
+    d.getElementById("execution-mode-label").textContent,
+    "Paper mode",
+  );
+  d.getElementById("account-view-paper").click();
+  assert.equal(
+    d.getElementById("automation-view").classList.contains("hidden"),
+    false,
+  );
+  assert.equal(
     d.getElementById("paper-position-panel").classList.contains("hidden"),
     false,
   );
@@ -410,7 +431,7 @@ test("a paused paper position remains visible in Account without inventing excha
   );
   assert.match(
     d.getElementById("account-notice").textContent,
-    /paper simulation/,
+    /paper simulation in Automation/,
   );
   assert.equal(d.getElementById("account-balance").textContent, "—");
   assert.doesNotMatch(
@@ -425,8 +446,77 @@ test("a paused paper position remains visible in Account without inventing excha
   );
   assert.ok(
     !calls.some((c) =>
-      ["/api/start", "/api/settings", "/api/reconcile"].includes(c.url),
+      ["/api/start", "/api/stop", "/api/settings", "/api/reconcile"].includes(
+        c.url,
+      ),
     ),
+  );
+});
+
+test("a connected demo account does not turn a running paper trade into an exchange position", async (t) => {
+  const status = structuredClone(initial);
+  status.settings.symbol = "ETHUSD";
+  status.running = true;
+  status.credentials_configured = true;
+  status.state.position = {
+    side: "sell",
+    entry: 2000,
+    stop: 2020,
+    targets: [1990, 1980, 1960],
+    quantities: [2, 1, 1],
+    remaining: 4,
+    stage: 0,
+  };
+  const account = structuredClone(ready);
+  account.sections.positions.rows = [];
+  account.sections.positions.updated_at = Math.floor(Date.now() / 1000);
+  const {
+    w,
+    document: d,
+    calls,
+    state,
+  } = await dashboard(t, account, status, "#account");
+  assert.equal(
+    d.getElementById("execution-mode-label").textContent,
+    "Paper mode",
+  );
+  assert.equal(
+    d.getElementById("connection-label").textContent,
+    "Account connected",
+  );
+  assert.equal(d.getElementById("positions-count").textContent, "0");
+  assert.match(
+    d.getElementById("account-mode-context").textContent,
+    /does not switch the bot/,
+  );
+  assert.doesNotMatch(d.getElementById("account-view").textContent, /ETHUSD/);
+  assert.match(
+    d.getElementById("account-paper-position").textContent,
+    /ETHUSD/,
+  );
+  d.getElementById("execution-mode-button").click();
+  assert.equal(d.getElementById("setting-mode").value, "paper");
+  assert.equal(state.settings.mode, "paper");
+  assert.ok(
+    !calls.some((c) =>
+      ["/api/start", "/api/stop", "/api/settings", "/api/reconcile"].includes(
+        c.url,
+      ),
+    ),
+  );
+  state.settings.mode = "demo";
+  w.render(state);
+  assert.equal(
+    d.getElementById("execution-mode-label").textContent,
+    "Demo mode",
+  );
+  assert.equal(
+    d.getElementById("account-mode-context").classList.contains("hidden"),
+    true,
+  );
+  assert.equal(
+    d.getElementById("paper-position-panel").classList.contains("hidden"),
+    true,
   );
 });
 
@@ -514,7 +604,7 @@ test("results render a large equity series without argument limits and paginate 
         url: "https://github.com/mementum/backtrader",
         kind: "execution_scenarios",
         status: "passed",
-        message: "18/18 controlled broker scenarios agree.",
+        message: "20/20 controlled broker scenarios agree.",
         scope:
           "Controlled bracket execution; not a replay of this strategy or period.",
         limitations: ["Entry-candle activation timing is not compared."],

@@ -21,11 +21,24 @@
         ><button id="backtest-tab">Backtest</button
         ><button id="activity-tab">Activity</button>
       </nav>
-      <button class="connection-pill" id="connection-button">
-        <span class="dot gray"></span>
-        <span id="connection-label">Demo environment</span>
-        <span class="avatar">D</span>
-      </button>
+      <div class="header-status">
+        <button
+          type="button"
+          id="execution-mode-button"
+          class="execution-mode-pill"
+        >
+          <span id="execution-mode-label">Checking mode…</span>
+        </button>
+        <button
+          class="connection-pill"
+          id="connection-button"
+          aria-label="Open Delta demo account connection settings"
+        >
+          <span class="dot gray"></span>
+          <span id="connection-label">Demo account connection</span>
+          <span class="avatar">D</span>
+        </button>
+      </div>
     </header>
     <main>
       <div id="automation-view">
@@ -78,13 +91,48 @@
             <p id="stop-sub">Moves after each target</p>
           </article>
         </section>
+        <section
+          id="paper-position-panel"
+          class="data-panel paper-position-panel hidden"
+          aria-labelledby="paper-position-title"
+        >
+          <div class="section-heading">
+            <div>
+              <h2 id="paper-position-title">Paper simulation</h2>
+              <p>
+                This trade is simulated locally. It does not create an order or
+                position in your Delta demo account.
+              </p>
+            </div>
+            <span id="paper-position-status" class="pill muted"></span>
+          </div>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            aria-label="Simulated paper position table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Market</th>
+                  <th>Direction</th>
+                  <th>Open contracts</th>
+                  <th>Entry</th>
+                  <th>Stop loss</th>
+                  <th>Next target</th>
+                </tr>
+              </thead>
+              <tbody id="account-paper-position"></tbody>
+            </table>
+          </div>
+        </section>
         <section class="workspace" aria-label="Strategy workspace">
           <div class="workspace-top">
             <div class="market-tab">
               <span class="coin">₿</span
               ><strong id="market-symbol">BTCUSD</strong
               ><span class="divider"></span><span id="timeframe-label">5m</span
-              ><span class="demo-label">DELTA DEMO</span>
+              ><span class="demo-label">DEMO MARKET DATA</span>
             </div>
             <span class="feed-label" id="feed-status"
               ><span class="dot gray"></span> Awaiting market data</span
@@ -315,41 +363,22 @@
         >
           Connect your demo account to fetch balances.
         </div>
-        <section
-          id="paper-position-panel"
-          class="data-panel paper-position-panel hidden"
-          aria-labelledby="paper-position-title"
+        <aside
+          id="account-mode-context"
+          class="notice paper-mode-context hidden"
+          aria-labelledby="account-mode-title"
         >
-          <div class="section-heading">
-            <div>
-              <h2 id="paper-position-title">Your paper position</h2>
-              <p>
-                Simulated by this bot, with its saved stop and next target. Demo
-                account details appear below when connected.
-              </p>
-            </div>
-            <span id="paper-position-status" class="pill muted"></span>
+          <div>
+            <strong id="account-mode-title">Paper mode selected</strong>
+            <p>
+              Paper trades run locally and appear in Automation. Connecting an
+              account does not switch the bot to demo order execution.
+            </p>
           </div>
-          <div
-            class="table-scroll"
-            tabindex="0"
-            aria-label="Paper position table"
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th>Market</th>
-                  <th>Direction</th>
-                  <th>Open contracts</th>
-                  <th>Entry</th>
-                  <th>Stop loss</th>
-                  <th>Next target</th>
-                </tr>
-              </thead>
-              <tbody id="account-paper-position"></tbody>
-            </table>
-          </div>
-        </section>
+          <button id="account-view-paper" type="button" class="secondary">
+            View paper simulation →
+          </button>
+        </aside>
         <div class="account-toolbar">
           <span id="account-identity">Delta India · Demo</span
           ><label class="asset-picker"
@@ -421,7 +450,10 @@
         <section class="data-panel" aria-labelledby="positions-title">
           <div class="section-heading">
             <div>
-              <h2 id="positions-title">Open positions</h2>
+              <h2 id="positions-title">
+                Demo exchange positions
+                <span id="positions-count" class="position-count">—</span>
+              </h2>
               <p>
                 All products in your demo account, including trades placed
                 outside this bot.
@@ -990,7 +1022,8 @@
         >
           <p class="form-note">
             Changes apply to the next run. Pause and resolve active trades
-            before editing.
+            before editing. Saving demo API keys connects account information;
+            choose Demo execution mode explicitly to send orders to Delta demo.
           </p>
           <div id="strategy-inputs" class="form-grid"></div>
         </div>

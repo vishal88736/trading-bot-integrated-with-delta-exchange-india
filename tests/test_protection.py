@@ -1,8 +1,9 @@
 import json
 
+import pytest
 import requests
 
-from clients.delta import Delta
+from clients.delta import Delta, UncertainOrder
 
 
 class ProtectiveSession:
@@ -34,3 +35,20 @@ def test_stop_ladder_edits_existing_protection_instead_of_creating_another_brack
     assert receipt["stop_price"] == "100.0"
     assert [r.method for r in session.sent] == ["GET", "PUT"]
     assert json.loads(session.sent[1].body) == {"id": 321, "product_id": 84, "stop_price": "100.0"}
+
+
+@pytest.mark.parametrize("change", [{"id": 999}, {"stop_price": "NaN"}])
+def test_wrong_stop_acknowledgement_is_not_accepted_or_retried(change):
+    class WrongReceipt(ProtectiveSession):
+        def send(self, request, **options):
+            response = super().send(request, **options)
+            if request.method == "PUT":
+                payload = response.json()
+                payload["result"].update(change)
+                response._content = json.dumps(payload).encode()
+            return response
+
+    session = WrongReceipt()
+    with pytest.raises(UncertainOrder):
+        Delta("fixture-key", "fixture-secret", session).protect(84, "100.0")
+    assert [r.method for r in session.sent] == ["GET", "PUT"]

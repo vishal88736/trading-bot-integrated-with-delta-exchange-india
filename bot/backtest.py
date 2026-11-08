@@ -161,7 +161,7 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
                     )
                     if position:
                         position.stage += 1
-                        position.stop = next_stop(position)
+                        position.stop = next_stop(position, product["tick_size"])
                         trade["stop_updates"].append(
                             {
                                 "time": candle.time + interval,

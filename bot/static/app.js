@@ -44,6 +44,14 @@ function render(data) {
   const s = data.settings,
     p = data.state.position,
     quote = data.quote || "quote";
+  const executionMode = data.execution?.mode || s.mode;
+  const modeLabel = executionMode === "demo" ? "Demo mode" : "Paper mode";
+  $("execution-mode-label").textContent = modeLabel;
+  $("execution-mode-button").dataset.mode = executionMode;
+  $("execution-mode-button").setAttribute(
+    "aria-label",
+    `${modeLabel}. Open execution mode settings`,
+  );
   $("status-value").replaceChildren(
     document.createTextNode(
       data.running ? "Running " : data.error || p ? "Paused " : "Ready ",
@@ -383,7 +391,12 @@ for (const [section, key, title, kind, min, max, step] of fields) {
     for (const value of kind) {
       const option = document.createElement("option");
       option.value = value;
-      option.textContent = value.replaceAll("_", " ");
+      option.textContent =
+        key === "mode"
+          ? value === "paper"
+            ? "Paper — local simulation"
+            : "Demo — orders at Delta demo"
+          : value.replaceAll("_", " ");
       input.append(option);
     }
   } else {
@@ -524,6 +537,7 @@ $("settings-button").onclick = () => openSettings();
 $("strategy-tab").onclick = () => openSettings();
 $("chart-settings").onclick = () => openSettings();
 $("connection-button").onclick = () => openSettings("connection");
+$("execution-mode-button").onclick = () => openSettings("strategy");
 $("close-settings").onclick = () => $("settings-dialog").close();
 wireTabs("#settings-dialog [data-tab]", "tab", selectTab);
 $("settings-form").addEventListener("input", () =>
@@ -620,9 +634,12 @@ $("save-connection").onclick = async () => {
     $("test-connection").disabled = false;
   }
 };
-async function start() {
+async function start(confirmDemo = false) {
   try {
-    await api("start", {});
+    await api("start", {
+      expected_mode: current.settings.mode,
+      confirm_demo: confirmDemo,
+    });
     toast("Runner starting. Checking demo market data…");
     await refresh();
   } catch (error) {
@@ -641,7 +658,7 @@ $("start-button").onclick = () => {
 $("cancel-confirm").onclick = () => $("confirm-dialog").close();
 $("accept-confirm").onclick = () => {
   $("confirm-dialog").close();
-  start();
+  start(true);
 };
 $("stop-button").onclick = async () => {
   try {

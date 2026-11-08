@@ -49,6 +49,15 @@ $("activity-tab").onclick = () => {
   $("activity").scrollIntoView({ behavior: "auto" });
 };
 $("account-connect").onclick = () => openSettings("connection");
+$("account-view-paper").onclick = () => {
+  showView("automation");
+  if (!$("paper-position-panel").classList.contains("hidden"))
+    $("paper-position-panel").scrollIntoView({
+      block: "start",
+      behavior: "auto",
+    });
+  else window.scrollTo({ top: 0, behavior: "auto" });
+};
 
 function pair(top, bottom) {
   const wrapper = document.createElement("div");
@@ -97,7 +106,14 @@ const accountHelp = (message) => {
   return message;
 };
 function renderPaperPosition(data) {
-  const position = data?.settings.mode === "paper" && data.state.position;
+  const paper = data?.execution
+    ? data.execution.simulation
+    : data?.settings.mode === "paper";
+  const position = paper && data.state.position;
+  $("account-mode-context").classList.toggle("hidden", !paper);
+  $("account-mode-title").textContent = data?.running
+    ? "Paper simulation is running"
+    : "Paper mode selected";
   $("paper-position-panel").classList.toggle("hidden", !position);
   if (!position) return;
   $("paper-position-status").textContent = data.running
@@ -128,10 +144,11 @@ function renderAccount(data) {
   const messages = Object.entries(sections)
     .filter(([, section]) => section.error)
     .map(([name, section]) => `${name}: ${accountHelp(section.error)}`);
+  if (data.error) messages.unshift(accountHelp(data.error));
   const labels = {
     disconnected:
       current?.settings.mode === "paper" && current.state.position
-        ? "Your open trade is a paper simulation, shown below. Connect your Delta demo account in Connection settings to load exchange funds and holdings."
+        ? "Your open trade is a paper simulation in Automation. Connect your Delta demo account in Connection settings to load exchange funds and holdings."
         : "Connect your demo account in Connection settings to see funds and holdings.",
     loading: "Fetching account information from Delta demo…",
     connected:
@@ -143,7 +160,7 @@ function renderAccount(data) {
   };
   $("connection-label").textContent =
     data.status === "connected"
-      ? "Demo account connected"
+      ? "Account connected"
       : data.status === "disconnected"
         ? "Connect demo account"
         : data.status === "loading"
@@ -157,6 +174,14 @@ function renderAccount(data) {
   $("account-notice").classList.toggle("error", messages.length > 0);
   $("connection-result").textContent =
     `${labels[data.status]} ${messages.join(" ")}`;
+  const positionSection = sections.positions;
+  const positionsKnown = Boolean(positionSection?.updated_at);
+  const positionsStale =
+    positionSection?.error ||
+    (positionsKnown && Date.now() / 1000 - positionSection.updated_at > 45);
+  $("positions-count").textContent = positionsKnown
+    ? `${positions.length}${positionsStale ? " · stale" : ""}`
+    : "—";
   const accountId = wallets.find((w) => w.account_id != null)?.account_id;
   $("account-identity").textContent =
     `Delta India · Demo${accountId != null ? ` · Account ${accountId}` : ""}`;

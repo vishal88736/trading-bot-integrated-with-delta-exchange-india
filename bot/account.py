@@ -128,11 +128,23 @@ class Account:
             self.sections = {}
 
     def snapshot(self, force=False):
-        credentials = self.credentials()
+        try:
+            credentials = self.credentials()
+        except Exception as exc:
+            return {
+                "status": "error",
+                "source": "delta_demo",
+                "refreshing": False,
+                "sections": {},
+                "error": str(exc)
+                if isinstance(exc, DeltaError)
+                else "Demo credentials could not be read",
+            }
         with self.lock:
             if not all(credentials):
                 return {
                     "status": "disconnected",
+                    "source": "delta_demo",
                     "refreshing": False,
                     "sections": {},
                     "message": "Add your demo API key and secret to load funds and holdings",
@@ -160,6 +172,7 @@ class Account:
             )
             return {
                 "status": status,
+                "source": "delta_demo",
                 "refreshing": busy,
                 "sections": sections,
                 "message": (
@@ -197,9 +210,7 @@ class Account:
                 }
             except Exception as exc:
                 message = (
-                    str(exc)
-                    if isinstance(exc, DeltaError)
-                    else f"Could not read demo {section}"
+                    str(exc) if isinstance(exc, DeltaError) else f"Could not read demo {section}"
                 )
                 for secret in credentials:
                     if secret:

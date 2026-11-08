@@ -13,9 +13,9 @@ The bot takes partial profits and advances the remaining stop loss: **TP1 → en
 - **Automation dashboard:** candle chart, strategy flow, saved position, current stop, and activity history.
 - **Configurable entries:** EMA cloud, CMO momentum, ATR levels, higher-timeframe filter, or your own Python entry rules.
 - **Settings preview:** live target reward/risk and partial contract sizes, keyboard navigation, and field-level validation feedback.
-- **Account information:** demo balances, available funds, margin, open positions, orders, and recent fills. Paper positions have their own clearly labeled panel.
+- **Account information:** demo balances, available funds, margin, open positions, orders, and recent fills. Paper positions appear under Automation, while Account shows exchange data.
 - **Free backtesting:** one market per run, date presets up to one year, simulated costs, equity curve, trade timelines, and JSON export.
-- **Reference checks:** two independent statistics implementations and 18 Backtrader broker execution scenarios.
+- **Reference checks:** two independent statistics implementations and 20 Backtrader broker execution scenarios.
 
 ## Quick start
 
@@ -88,18 +88,18 @@ To execute demo orders, choose **Strategy settings → Execution mode → demo**
 
 The Account page loads independently of the trading runner. Balances, positions, orders, and fills use separate requests, so one slow or failed endpoint does not hold up the others.
 
-| Section             | Information                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------- |
-| Funds               | Wallet balance, exchange-reported available funds, and blocked margin in the selected asset          |
-| Wallet holdings     | Assets and isolated, cross, and portfolio margin fields                                              |
-| Open positions      | All account products, direction, contracts, entry, and available margin/P&L fields returned by Delta |
-| Orders              | Open and pending orders across products; up to 1,000 with a truncation notice                        |
-| Recent fills        | Latest 50 exchange fills                                                                             |
-| Your paper position | Saved simulated position, entry, stop, and next target, including while paused                       |
+| Section                       | Information                                                                                          |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Funds                         | Wallet balance, exchange-reported available funds, and blocked margin in the selected asset          |
+| Wallet holdings               | Assets and isolated, cross, and portfolio margin fields                                              |
+| Open positions                | All account products, direction, contracts, entry, and available margin/P&L fields returned by Delta |
+| Orders                        | Open and pending orders across products; up to 1,000 with a truncation notice                        |
+| Recent fills                  | Latest 50 exchange fills                                                                             |
+| Paper simulation (Automation) | Saved simulated position, entry, stop, and next target, including while paused                       |
 
 Account reads refresh every 15 seconds. Each section shows its fetch time. Failed reads retain the last successful rows marked stale; missing values remain dashes. An unavailable empty snapshot is not presented as a flat account. Assets retain their own units rather than being added across currencies. Delta notes that margined positions can lag fills by up to 10 seconds. [Account API documentation](https://docs.delta.exchange/#get-margined-positions)
 
-**Paper trades do not change demo exchange funds or holdings.** Connect the demo account to populate its account sections.
+**Paper trades do not change demo exchange funds or holdings.** They appear in **Automation → Paper simulation**. **Account → Demo exchange positions** uses Delta account data. Saving API keys does not change the execution mode.
 
 ## Free backtesting
 
@@ -137,7 +137,7 @@ OHLC candles do not reveal intrabar price order. The simulator gives the stop pr
 | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | [PyBacktestPro](https://github.com/raviwijerathna1/PyBacktestPro)                                               | Drawdown, trades, win rate, ledger P&L, fees                                                                | Recalculates statistics from this engine's ledger/equity        |
 | [Trading strategy backtesting suite](https://github.com/Trading-Backtesting/trading-strategy-backtesting-suite) | Ending equity, return, drawdown, trades, win rate                                                           | Recalculates statistics from this engine's ledger/equity        |
-| [Backtrader](https://github.com/mementum/backtrader)                                                            | 18 long/short scenarios: partial exits, stop advances, gaps, costs, rounding, protective-order cancellation | Independently executes controlled OHLC paths with fixed signals |
+| [Backtrader](https://github.com/mementum/backtrader)                                                            | 20 long/short scenarios: partial exits, stop advances, gaps, costs, rounding, protective-order cancellation | Independently executes controlled OHLC paths with fixed signals |
 
 The statistics checks do not independently execute strategy orders. Backtrader uses its own unmodified simulated broker and independently constructs levels and allocations. Fault-injection tests verify detection of broken dashboard stop moves and partial sizes.
 
@@ -190,7 +190,7 @@ The built-in `trend_signals` strategy implements the supplied mathematical rules
 | TP2   | Floor of 25% of original contracts | TP1 price                                                         |
 | TP3   | All remaining contracts            | Position closes                                                   |
 
-At least four contracts are required. The final tier receives quantity remainders. Levels use the entry ATR and exchange tick size. With the default stop, targets are **0.5R, 1R, and 2R**. Both settings dialogs preview reward/risk and partial quantities as you edit.
+At least four contracts are required. The final tier receives quantity remainders. Levels use the entry ATR and exchange tick size, including the breakeven stop. With the default stop, targets are **0.5R, 1R, and 2R**. Both settings dialogs preview reward/risk and partial quantities as you edit.
 
 Demo entries include a native exchange stop. After a confirmed partial exit, the bot edits that stop and verifies its price. Targets are checked at the polling interval and executed with reduce-only market orders; brief touches between polls can be missed. Pausing keeps the existing native demo stop but pauses target monitoring. A stop at entry does not cover fees, slippage, gaps, or funding. TP3 closes the allocation; a Chandelier runner is not implemented.
 
@@ -246,7 +246,7 @@ uv build --no-sources
 
 Coverage includes replay fills/costs/risk limits, stop ladders, indicator-window parity, account parsing/staleness, secret redaction, restart recovery, ambiguous writes, API signing, local HTTP controls, Backtrader execution/fault detection, and UI interactions.
 
-Public reads and full-year BTCUSD/ETHUSD five-minute simulations (105,120 candles for 365 days) have completed, along with seven-day demo-history tests and reference checks. These are historical simulations. Authenticated balances, actual demo orders, and live stop amendments still require validation with a connected account. DOM tests do not establish rendered-browser layout or live exchange execution.
+Public reads and full-year BTCUSD/ETHUSD five-minute simulations (105,120 candles for 365 days) have completed, along with seven-day demo-history tests and reference checks. These are historical simulations. Read-only authenticated account snapshots have also been checked locally. Actual demo orders and live stop amendments still require a dedicated demo validation run. DOM tests do not establish rendered-browser layout or live exchange execution.
 
 ### Project map
 
@@ -264,6 +264,8 @@ Public reads and full-year BTCUSD/ETHUSD five-minute simulations (105,120 candle
 | [clients/delta.py](clients/delta.py)                         | Demo REST v2 client and public history |
 | [tests/](tests/)                                             | Python and UI DOM checks               |
 | [.github/workflows/checks.yml](.github/workflows/checks.yml) | CI matrix                              |
+
+The [backend audit](docs/backend-audit.md) records the confirmed fixes and the limits of validation. The status API exposes execution provenance independently of account connectivity.
 
 ## Upstream and attribution
 

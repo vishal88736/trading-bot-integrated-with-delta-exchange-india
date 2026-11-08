@@ -111,6 +111,7 @@ def test_dashboard_settings_and_credentials_roundtrip(tmp_path):
         )
         result = client.get("/api/status")
         assert result.json()["credentials_configured"] is True
+        assert result.json()["settings"]["mode"] == "paper"
         assert "fixture-secret" not in result.text and "fixture-key" not in result.text
         assert (
             client.get("/").status_code == 200 and client.get("/static/app.js").status_code == 200
@@ -148,3 +149,26 @@ def test_production_execution_cannot_be_selected(tmp_path):
         settings = client.get("/api/status").json()["settings"]
         settings["mode"] = "live"
         assert client.post("/api/settings", json=settings).status_code == 422
+
+
+def test_demo_execution_confirmation_is_enforced_by_backend(tmp_path):
+    app = create_app(tmp_path)
+    with TestClient(app) as client:
+        settings = client.get("/api/status").json()["settings"]
+        settings["mode"] = "demo"
+        assert client.post("/api/settings", json=settings).status_code == 200
+        response = client.post("/api/start", json={"expected_mode": "demo"})
+        assert response.status_code == 409
+        assert "Confirm demo execution" in response.json()["detail"]
+        assert app.state.service.thread is None
+        assert client.post("/api/start", json={"confirm_demo": "true"}).status_code == 422
+
+
+@pytest.mark.parametrize(
+    "receipt", [{}, {"leverage": "2", "product_id": 84}, {"leverage": "1", "product_id": 85}]
+)
+def test_unconfirmed_leverage_is_not_accepted_or_retried(receipt):
+    session = Session({"success": True, "result": receipt})
+    with pytest.raises(UncertainOrder):
+        Delta("fixture-key", "fixture-secret", session).set_leverage(84, 1)
+    assert len(session.sent) == 1

@@ -7,7 +7,7 @@ from pathlib import Path
 from bot.models import RESOLUTIONS, State
 from bot.risk import next_stop, trade_plan
 from bot.settings import Settings, atomic_json
-from clients.delta import Delta, DeltaError, UncertainOrder, tick_price
+from clients.delta import Delta, DeltaError, UncertainOrder, contract_size, tick_price
 from strategies.custom_strategy import CustomStrategy
 from strategies.trend_signals import TrendSignals
 
@@ -16,9 +16,14 @@ class Engine:
     def __init__(self, settings: Settings, client: Delta, root: Path):
         self.settings, self.client, self.root = settings, client, root
         self.path = root / f"{settings.mode}-{settings.symbol}.json"
-        self.state = (
-            State.parse(json.loads(self.path.read_text())) if self.path.exists() else State()
-        )
+        try:
+            self.state = (
+                State.parse(json.loads(self.path.read_text())) if self.path.exists() else State()
+            )
+        except (OSError, ValueError, TypeError):
+            raise DeltaError(
+                "Saved trade state is invalid; inspect the runtime before restarting"
+            ) from None
         if self.state.signature != settings.signature():
             if self.state.position or self.state.pending:
                 raise DeltaError(
@@ -52,7 +57,9 @@ class Engine:
         if self.settings.mode == "paper":
             return
         data = self.client.position(self.product_id)
-        actual = int(data.get("size", 0))
+        if not isinstance(data, dict) or "size" not in data:
+            raise DeltaError("Demo position response cannot confirm the account quantity")
+        actual = contract_size(data["size"])
         p = self.state.position
         expected = p.remaining * (1 if p.side == "buy" else -1) if p else 0
         if actual != expected:
@@ -66,12 +73,28 @@ class Engine:
             )
         if p:
             stops = [o for o in orders if o.get("stop_order_type") == "stop_loss_order"]
-            if (
-                len(stops) != 1
-                or abs(float(stops[0].get("stop_price", 0)) - p.stop) > float(self.tick) / 2
-            ):
+            valid = False
+            if len(stops) == 1 and len(orders) == 1:
+                stop = stops[0]
+                try:
+                    stop_price = float(stop["stop_price"])
+                    valid = (
+                        math.isfinite(stop_price)
+                        and stop_price > 0
+                        and abs(stop_price - p.stop) <= float(self.tick) / 2
+                        and stop.get("side", "sell" if p.side == "buy" else "buy")
+                        == ("sell" if p.side == "buy" else "buy")
+                        and stop.get("reduce_only", True) is True
+                        and stop.get("state", "pending") in ("open", "pending")
+                        # Delta brackets close the entire position; their size
+                        # is not a standalone-order coverage requirement.
+                        and str(stop.get("product_id", self.product_id)) == str(self.product_id)
+                    )
+                except (KeyError, TypeError, ValueError, DeltaError):
+                    valid = False
+            if not valid:
                 raise DeltaError(
-                    "Native protective stop differs from local state; inspect demo account"
+                    "Native protective stop price or metadata is unconfirmed; inspect demo account"
                 )
 
     def exchange_action(self, operation, **details):
@@ -88,22 +111,36 @@ class Engine:
             self.product_id, side, quantity, self.state.pending["client_id"], stop
         )
         try:
-            price = float(receipt["average_fill_price"])
-            fee = float(receipt.get("paid_commission", 0))
-            complete = (
-                int(receipt["size"]) == quantity
-                and int(receipt["unfilled_size"]) == 0
-                and receipt["state"] == "closed"
-            )
-            if not complete or not math.isfinite(price) or price <= 0 or not math.isfinite(fee):
+            if not isinstance(receipt, dict):
                 raise ValueError
-        except (KeyError, TypeError, ValueError):
+            price = float(receipt["average_fill_price"])
+            fee = float(receipt["paid_commission"])
+            complete = (
+                contract_size(receipt["size"]) == quantity
+                and contract_size(receipt["unfilled_size"]) == 0
+                and receipt["state"] == "closed"
+                and receipt.get("side") == side
+                and str(receipt.get("product_id")) == str(self.product_id)
+                and receipt.get("client_order_id") == self.state.pending["client_id"]
+                and receipt.get("reduce_only") is (stop is None)
+            )
+            if (
+                not complete
+                or not math.isfinite(price)
+                or price <= 0
+                or not math.isfinite(fee)
+                or isinstance(receipt["average_fill_price"], bool)
+                or isinstance(receipt["paid_commission"], bool)
+            ):
+                raise ValueError
+        except (KeyError, TypeError, ValueError, DeltaError):
             raise UncertainOrder(
                 "Demo fill was incomplete or unconfirmed; reconcile the account"
             ) from None
         return price, fee
 
     def protect(self, stop):
+        stop = float(tick_price(stop, self.tick))
         if self.settings.mode == "demo":
             self.exchange_action("move_stop", stop=stop)
             self.client.protect(self.product_id, tick_price(stop, self.tick))
@@ -173,7 +210,7 @@ class Engine:
             p.stage += 1
             if self.state.position:
                 # TP1 -> entry, TP2 -> TP1. TP3 closes the final allocation.
-                new_stop = next_stop(p)
+                new_stop = next_stop(p, self.tick)
                 self.protect(new_stop)
                 self.event("stop_moved", stage=p.stage, stop=new_stop)
             self.event(f"tp{stage + 1}", **details)

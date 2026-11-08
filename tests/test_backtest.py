@@ -180,3 +180,17 @@ def test_backtest_client_failure_is_reported_instead_of_staying_running():
     snapshot = backtests.snapshot()
     assert snapshot["status"] == "error" and snapshot["result"] is None
     assert "private transport details" not in snapshot["message"]
+
+
+def test_replay_break_even_stop_uses_the_exchange_tick():
+    bars, higher = history(
+        [
+            (100, 101, 99, 100),
+            (100, 105, 99, 103),
+            (105, 112, 104, 111),
+            (104, 106, 103, 105),
+            (105, 106, 103, 105),
+        ]
+    )
+    result = simulate(request(fee_bps=0.0, slippage_bps=3.0), bars, higher, PRODUCT, OneSignal())
+    assert result["trades"][0]["stop_updates"][0]["stop"] == 100.0

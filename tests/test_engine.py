@@ -27,6 +27,10 @@ class DemoClient:
             raise UncertainOrder("Unknown write")
         self.size += size * (1 if side == "buy" else -1)
         return {
+            "product_id": product_id,
+            "side": side,
+            "client_order_id": client_id,
+            "reduce_only": stop is None,
             "size": size,
             "unfilled_size": 0,
             "state": "closed",
@@ -168,3 +172,106 @@ def test_state_file_is_private(tmp_path):
     path = tmp_path / "secrets.json"
     atomic_json(path, {"api_secret": "fixture-secret"})
     assert path.stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"stop_price": "NaN"},
+        {"side": "buy"},
+        {"reduce_only": False},
+        {"state": "closed"},
+        {"product_id": 85},
+    ],
+)
+def test_invalid_native_protection_cannot_pass_account_check(tmp_path, change):
+    bot, client = engine(tmp_path, mode="demo")
+    stop = {
+        "id": 321,
+        "product_id": 84,
+        "bracket_order": True,
+        "stop_order_type": "stop_loss_order",
+        "stop_price": "80.0",
+        "side": "sell",
+        "reduce_only": True,
+        "state": "pending",
+        "size": 4,
+    }
+    stop.update(change)
+    client.open_orders = lambda product_id: [stop]
+    with pytest.raises(DeltaError):
+        bot.check_account()
+    assert len(client.orders) == 1
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"size": 4.9},
+        {"unfilled_size": 0.9},
+        {"paid_commission": None},
+        {"side": "sell"},
+        {"product_id": 85},
+        {"client_order_id": "wrong-order"},
+        {"reduce_only": True},
+        {"state": "open"},
+    ],
+)
+def test_malformed_fill_does_not_become_a_confirmed_position(tmp_path, change):
+    client = DemoClient()
+    original = client.market_order
+
+    def malformed(*args, **kwargs):
+        result = original(*args, **kwargs)
+        result.update(change)
+        if change == {"paid_commission": None}:
+            result.pop("paid_commission")
+        return result
+
+    client.market_order = malformed
+    bot = Engine(Settings(mode="demo"), client, tmp_path)
+    with pytest.raises(UncertainOrder):
+        bot.open(Signal("buy", 10, 1000, "fixture"), 100)
+    assert bot.state.position is None
+    assert json.loads(bot.path.read_text())["pending"]["operation"] == "entry"
+    assert len(client.orders) == 1
+
+
+def test_break_even_stop_uses_the_exchange_tick(tmp_path):
+    bot = Engine(Settings(paper_fee_bps=0.0), DemoClient(), tmp_path)
+    bot.open(Signal("buy", 10, 1000, "fixture"), 100.03)
+    bot.manage(110)
+    assert bot.state.position.stop == 100.0
+
+
+def test_full_native_stop_coverage_is_accepted_after_partial_exit(tmp_path):
+    bot, client = engine(tmp_path, mode="demo")
+    bot.manage(110)
+    client.open_orders = lambda product: [
+        {
+            "id": 321,
+            "product_id": 84,
+            "bracket_order": True,
+            "stop_order_type": "stop_loss_order",
+            "stop_price": "100.0",
+            "side": "sell",
+            "reduce_only": True,
+            "state": "pending",
+            "size": 4,
+        }
+    ]
+    bot.check_account()
+    assert bot.state.position.remaining == 2
+
+
+def test_position_wide_bracket_does_not_require_a_standalone_size(tmp_path):
+    bot, client = engine(tmp_path, mode="demo")
+    client.open_orders = lambda product: [
+        {
+            "id": 321,
+            "bracket_order": True,
+            "stop_order_type": "stop_loss_order",
+            "stop_price": "80.0",
+        }
+    ]
+    bot.check_account()
