@@ -37,6 +37,8 @@ Overview loads a **read-only Delta demo market preview while the runner is pause
 
 Choose **Area** or **Candles** above the chart. Hover, or focus the chart and use arrow keys, to inspect candle prices. **Ctrl K** (or **⌘ K**) searches workspace pages and settings. The mobile menu supports keyboard focus and Escape. The gold artwork is a local SVG; the UI needs no external image or font service.
 
+The workspace fills the browser window. Backtest setup groups market/strategy and dates into separate sections; **Strategy settings** contains indicators, higher-timeframe confirmation, presets, risk and costs. Expand **Data & validation** for the history source, cache policy and consistency checks. Download actions appear after a completed result.
+
 1. Open **Strategy settings** to choose the market, timeframes, indicators, and risk limits.
 2. Keep execution mode on **paper**, save, and select **Start paper run** to simulate with demo market data. This mode needs no API credentials.
 3. Open **Backtest** for historical testing, or **Account → Connection settings** to connect a demo account.

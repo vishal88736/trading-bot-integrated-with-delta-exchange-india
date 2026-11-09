@@ -46,11 +46,19 @@ for (const button of document.querySelectorAll("[data-studio-action]"))
   button.onclick = () => studioAction(button.dataset.studioAction);
 
 function updateBacktestDataSummary() {
-  const sources = {india_public:"Public market data", demo:"Demo market data"};
-  const caches = {use:"cached candles", refresh:"fresh download", off:"cache bypassed"};
+  const sources = {
+    india_public: "Public market data",
+    demo: "Demo market data",
+  };
+  const caches = {
+    use: "cached candles",
+    refresh: "fresh download",
+    off: "cache bypassed",
+  };
   const samples = Number($("research-lookahead").value);
   $("backtest-data-summary").textContent = [
-    sources[$("backtest-source").value], caches[$("research-cache").value],
+    sources[$("backtest-source").value],
+    caches[$("research-cache").value],
     samples ? `${samples} checkpoints` : "signal check off",
   ].join(" · ");
 }

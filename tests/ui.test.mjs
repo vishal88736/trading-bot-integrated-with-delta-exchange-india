@@ -1359,6 +1359,13 @@ test("backtest advanced settings stay separate from the essential setup and subm
     4,
   );
   assert.ok(advanced.contains(d.getElementById("backtest-setting-fast_ema")));
+  assert.ok(
+    advanced.contains(d.getElementById("backtest-setting-higher_timeframe")),
+  );
+  assert.ok(
+    advanced.contains(d.getElementById("backtest-strategy-description")),
+  );
+  assert.ok(advanced.contains(d.getElementById("backtest-strategy-preset")));
   assert.ok(advanced.contains(d.getElementById("backtest-setting-tp0")));
   d.getElementById("backtest-settings-open").click();
   assert.equal(advanced.open, true);
@@ -1382,6 +1389,78 @@ test("backtest advanced settings stay separate from the essential setup and subm
     calls.find((c) => c.url === "/api/backtests" && c.body).body.settings
       .sl_atr,
     2.5,
+  );
+});
+
+test("simplified setup keeps data choices available and submits them unchanged", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  const details = d.getElementById("backtest-data-settings");
+  assert.equal(details.open, false);
+  assert.ok(details.contains(d.getElementById("backtest-source")));
+  assert.ok(details.contains(d.getElementById("research-cache")));
+  assert.ok(details.contains(d.getElementById("research-lookahead")));
+  assert.equal(
+    d.getElementById("research-mode-help").classList.contains("hidden"),
+    true,
+  );
+  assert.equal(
+    d.getElementById("backtest-downloads").classList.contains("hidden"),
+    true,
+  );
+  details.open = true;
+  d.getElementById("backtest-source").value = "demo";
+  d.getElementById("research-cache").value = "refresh";
+  d.getElementById("research-lookahead").value = "32";
+  for (const id of ["backtest-source", "research-cache", "research-lookahead"])
+    d.getElementById(id).dispatchEvent(new w.Event("change"));
+  assert.match(
+    d.getElementById("backtest-data-summary").textContent,
+    /Demo market data.*fresh download.*32 checkpoints/,
+  );
+  details.open = false;
+  d.getElementById("backtest-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  await settle();
+  const body = calls.find(
+    (call) => call.url === "/api/backtests" && call.body,
+  )?.body;
+  assert.equal(body.source, "demo");
+  assert.equal(body.cache, "refresh");
+  assert.equal(body.lookahead_samples, 32);
+  assert.equal(body.check_lookahead, true);
+  assert.ok(
+    !calls.some((call) =>
+      ["/api/settings", "/api/start", "/api/stop"].includes(call.url),
+    ),
+  );
+});
+
+test("downloads appear for completed results and disappear during another run", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  assert.equal(
+    d.getElementById("backtest-downloads").classList.contains("hidden"),
+    true,
+  );
+  w.setBacktestJob({
+    status: "completed",
+    run_id: "clean-layout",
+    message: "Complete",
+    result: researchResult(),
+  });
+  assert.equal(
+    d.getElementById("backtest-downloads").classList.contains("hidden"),
+    false,
+  );
+  assert.equal(d.getElementById("backtest-export").disabled, false);
+  w.setBacktestJob({
+    status: "running",
+    run_id: "next-layout",
+    message: "Loading",
+  });
+  assert.equal(
+    d.getElementById("backtest-downloads").classList.contains("hidden"),
+    true,
   );
 });
 

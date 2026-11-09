@@ -442,7 +442,10 @@ function renderResearchJob(job) {
   updateResearchControls();
   const study = job.study;
   $("research-study").classList.toggle("hidden", !study);
-  $("backtest-downloads").classList.toggle("hidden", job.status !== "completed" || !job.result);
+  $("backtest-downloads").classList.toggle(
+    "hidden",
+    job.status !== "completed" || !job.result,
+  );
   $("research-report").disabled = job.status !== "completed" || !job.result;
   $("research-inputs").disabled =
     job.status !== "completed" || !job.result?.data_quality;

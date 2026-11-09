@@ -907,38 +907,55 @@
             <div class="bt-page-actions">
               <span class="bt-free-label"
                 ><span class="dot"></span> Local &amp; free</span
-              ><div id="backtest-downloads" class="bt-downloads hidden" aria-label="Download backtest results"><button id="backtest-export" class="secondary" disabled>
-                JSON results ↓</button
-              ><button id="research-report" class="secondary" disabled>
-                HTML report ↓</button
-              ><button id="research-inputs" class="secondary" disabled>
-                Replay inputs ↓</button
-              ><button
-                id="research-quantstats"
-                class="secondary hidden"
-                disabled
               >
-                QuantStats ↓
-              </button>
+              <div
+                id="backtest-downloads"
+                class="bt-downloads hidden"
+                aria-label="Download backtest results"
+              >
+                <button id="backtest-export" class="secondary" disabled>
+                  JSON results ↓</button
+                ><button id="research-report" class="secondary" disabled>
+                  HTML report ↓</button
+                ><button id="research-inputs" class="secondary" disabled>
+                  Replay inputs ↓</button
+                ><button
+                  id="research-quantstats"
+                  class="secondary hidden"
+                  disabled
+                >
+                  QuantStats ↓
+                </button>
               </div>
             </div>
           </div>
           <form id="backtest-form" class="data-panel backtest-controls">
             <div class="bt-config-heading">
-              <div><h2>Set up your test</h2><p>Choose your strategy and a period to replay.</p></div>
+              <div>
+                <h2>Set up your test</h2>
+                <p>Choose your strategy and a period to replay.</p>
+              </div>
               <div class="bt-config-actions">
-              <label class="field"
-                >Test type<select id="research-mode">
-                  <option value="single">Single backtest</option>
-                  <option value="multi_coin">Compare coins</option>
-                  <option value="parameters">Compare parameters</option>
-                  <option value="walk_forward">Walk-forward validation</option>
-                </select></label
-              >
-                <button type="button" id="backtest-settings-open" class="secondary">Strategy settings <span aria-hidden="true">↗</span></button>
+                <label class="field"
+                  >Test type<select id="research-mode">
+                    <option value="single">Single backtest</option>
+                    <option value="multi_coin">Compare coins</option>
+                    <option value="parameters">Compare parameters</option>
+                    <option value="walk_forward">
+                      Walk-forward validation
+                    </option>
+                  </select></label
+                >
+                <button
+                  type="button"
+                  id="backtest-settings-open"
+                  class="secondary"
+                >
+                  Strategy settings <span aria-hidden="true">↗</span>
+                </button>
               </div>
             </div>
-            <p id="research-mode-help" class="form-note">
+            <p id="research-mode-help" class="form-note hidden">
               Replay one strategy with its saved settings and inspect every
               trade.
             </p>
@@ -946,44 +963,51 @@
               <section class="bt-setup-block" aria-labelledby="bt-market-title">
                 <h3 id="bt-market-title">Market &amp; strategy</h3>
                 <div id="backtest-market-inputs" class="bt-market-grid">
-              <label class="field"
-                >Starting capital<input
-                  id="backtest-balance"
-                  type="number"
-                  min="1"
-                  max="1000000000"
-                  step="0.01"
-                  value="10000"
-                  required
-              /></label>
+                  <label class="field"
+                    >Starting capital<input
+                      id="backtest-balance"
+                      type="number"
+                      aria-label="Starting capital in the market's quote asset"
+                      min="1"
+                      max="1000000000"
+                      step="0.01"
+                      value="10000"
+                      required
+                  /></label>
                 </div>
               </section>
-              <section class="bt-setup-block bt-dates-block" aria-labelledby="bt-dates-title">
+              <section
+                class="bt-setup-block bt-dates-block"
+                aria-labelledby="bt-dates-title"
+              >
                 <h3 id="bt-dates-title">Test period</h3>
-            <div class="bt-period-heading">
-              <span class="bt-local-time">Dates use your local time</span>
-              <div class="range-presets" aria-label="Backtest date presets">
-                <button type="button" data-days="7" aria-pressed="true">
-                  7 days</button
-                ><button type="button" data-days="30" aria-pressed="false">
-                  1 month</button
-                ><button type="button" data-days="90" aria-pressed="false">
-                  3 months</button
-                ><button type="button" data-days="180" aria-pressed="false">
-                  6 months</button
-                ><button type="button" data-days="365" aria-pressed="false">
-                  1 year
-                </button>
-              </div>
-            </div>
-            <div class="bt-period-grid">
-              <label class="field"
-                >From<input id="backtest-start" type="datetime-local" required
-              /></label>
-              <label class="field"
-                >To<input id="backtest-end" type="datetime-local" required
-              /></label>
-            </div>
+                <div class="bt-period-heading">
+                  <span class="bt-local-time">Dates use your local time</span>
+                  <div class="range-presets" aria-label="Backtest date presets">
+                    <button type="button" data-days="7" aria-pressed="true">
+                      7 days</button
+                    ><button type="button" data-days="30" aria-pressed="false">
+                      1 month</button
+                    ><button type="button" data-days="90" aria-pressed="false">
+                      3 months</button
+                    ><button type="button" data-days="180" aria-pressed="false">
+                      6 months</button
+                    ><button type="button" data-days="365" aria-pressed="false">
+                      1 year
+                    </button>
+                  </div>
+                </div>
+                <div class="bt-period-grid">
+                  <label class="field"
+                    >From<input
+                      id="backtest-start"
+                      type="datetime-local"
+                      required
+                  /></label>
+                  <label class="field"
+                    >To<input id="backtest-end" type="datetime-local" required
+                  /></label>
+                </div>
               </section>
             </div>
             <div id="research-coin-options" class="research-options hidden">
@@ -1080,31 +1104,36 @@
               </div>
             </div>
             <details id="backtest-data-settings" class="bt-data-settings">
-              <summary><span>Data &amp; validation</span><span id="backtest-data-summary">Public market data · cached candles · 16 checkpoints</span><span class="bt-details-chevron" aria-hidden="true">⌄</span></summary>
+              <summary>
+                <span>Data &amp; validation</span
+                ><span id="backtest-data-summary"
+                  >Public market data · cached candles · 16 checkpoints</span
+                ><span class="bt-details-chevron" aria-hidden="true">⌄</span>
+              </summary>
               <div class="bt-data-grid">
-              <label class="field"
-                >Market data<select id="backtest-source">
-                  <option value="india_public">
-                    Delta India public market
-                  </option>
-                  <option value="demo">Delta demo market</option>
-                </select></label
-              >
-              <label class="field"
-                >Historical cache<select id="research-cache">
-                  <option value="use">Reuse saved candles</option>
-                  <option value="refresh">Download fresh candles</option>
-                  <option value="off">Bypass cache</option>
-                </select></label
-              >
-              <label class="field"
-                >Signal consistency check<select id="research-lookahead">
-                  <option value="16">16 checkpoints + trade signals</option>
-                  <option value="32">32 checkpoints + trade signals</option>
-                  <option value="64">64 checkpoints + trade signals</option>
-                  <option value="0">Disabled</option>
-                </select></label
-              >
+                <label class="field"
+                  >Market data<select id="backtest-source">
+                    <option value="india_public">
+                      Delta India public market
+                    </option>
+                    <option value="demo">Delta demo market</option>
+                  </select></label
+                >
+                <label class="field"
+                  >Historical cache<select id="research-cache">
+                    <option value="use">Reuse saved candles</option>
+                    <option value="refresh">Download fresh candles</option>
+                    <option value="off">Bypass cache</option>
+                  </select></label
+                >
+                <label class="field"
+                  >Signal consistency check<select id="research-lookahead">
+                    <option value="16">16 checkpoints + trade signals</option>
+                    <option value="32">32 checkpoints + trade signals</option>
+                    <option value="64">64 checkpoints + trade signals</option>
+                    <option value="0">Disabled</option>
+                  </select></label
+                >
               </div>
             </details>
             <div class="bt-config-footer">
@@ -1142,7 +1171,7 @@
               <div class="dialog-heading">
                 <div>
                   <div class="eyebrow">TEST PARAMETERS</div>
-                  <h2 id="backtest-settings-title">Strategy settings</h2>
+                  <h2 id="backtest-settings-title">Backtest settings</h2>
                 </div>
                 <button
                   type="button"
@@ -1194,16 +1223,16 @@
                 role="tabpanel"
                 aria-labelledby="bt-settings-signals"
               >
-            <div class="strategy-recipe-row">
-              <p id="backtest-strategy-description" class="form-note"></p>
-              <button
-                type="button"
-                id="backtest-strategy-preset"
-                class="secondary"
-              >
-                Load strategy preset
-              </button>
-            </div>
+                <div class="strategy-recipe-row">
+                  <p id="backtest-strategy-description" class="form-note"></p>
+                  <button
+                    type="button"
+                    id="backtest-strategy-preset"
+                    class="secondary"
+                  >
+                    Load strategy preset
+                  </button>
+                </div>
 
                 <div id="backtest-strategy-inputs" class="form-grid"></div>
               </section>

@@ -182,12 +182,13 @@ body {
   letter-spacing: 0.4px;
 }
 .sidebar-promo h2 {
-  font-size: 19px;
+  font-size: 17px;
   line-height: 1.3;
   margin-top: 12px;
   color: #102f24;
 }
 .sidebar-promo p {
+  display: none;
   position: relative;
   max-width: 135px;
   font-size: 12px;
@@ -268,6 +269,7 @@ body {
   margin-left: 14px;
 }
 .workspace-breadcrumb {
+  display: none;
   color: var(--muted);
   font-size: 12px;
   white-space: nowrap;
@@ -1428,6 +1430,165 @@ dialog::backdrop {
   color: var(--muted);
   border-top: 1px solid var(--border);
 }
+/* Keep the main setup focused; research details stay available on demand. */
+#backtest-view {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+#backtest-view .bt-page-heading {
+  margin-bottom: 20px;
+  align-items: center;
+}
+#backtest-view .bt-page-heading .eyebrow {
+  display: none;
+}
+#backtest-view h1 {
+  font-size: 30px;
+}
+.bt-downloads {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.studio-shell .backtest-controls {
+  padding: 22px 24px 0;
+}
+.backtest-controls .bt-config-heading {
+  margin-bottom: 22px;
+  gap: 20px;
+}
+.bt-config-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+.bt-config-actions > .field {
+  width: 220px;
+}
+.bt-config-actions .secondary {
+  min-height: 46px;
+  white-space: nowrap;
+}
+.backtest-controls .bt-config-heading p {
+  font-size: 13px;
+  margin-top: 6px;
+}
+.bt-essentials {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 36px;
+  margin-bottom: 20px;
+}
+.bt-setup-block {
+  min-width: 0;
+}
+.bt-setup-block > h3 {
+  font-size: 14px;
+  font-weight: 550;
+  color: #e3e5ee;
+  margin: 0 0 14px;
+}
+.backtest-controls .bt-market-grid,
+.backtest-controls .bt-period-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.bt-dates-block {
+  border-left: 1px solid var(--border-soft);
+  padding-left: 28px;
+}
+.backtest-controls .bt-period-heading {
+  padding: 0;
+  margin: 0 0 18px;
+  border: 0;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.backtest-controls .bt-period-heading .bt-local-time {
+  order: 2;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.bt-period-heading .range-presets {
+  width: 100%;
+  justify-content: space-between;
+}
+.bt-period-heading .range-presets button {
+  flex: 1;
+  min-height: 32px;
+  padding: 6px 8px;
+}
+.bt-data-settings {
+  border-top: 1px solid var(--border);
+}
+.bt-data-settings > summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0 0;
+  list-style: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #d0d3de;
+}
+.bt-data-settings > summary::-webkit-details-marker {
+  display: none;
+}
+.bt-data-settings > summary > span:first-child {
+  white-space: nowrap;
+}
+#backtest-data-summary {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: auto;
+  text-align: right;
+}
+.bt-details-chevron {
+  color: var(--mint);
+  font-size: 16px;
+}
+.bt-data-settings[open] .bt-details-chevron {
+  transform: rotate(180deg);
+}
+.bt-data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 18px 0 0;
+}
+.backtest-controls .bt-config-footer {
+  padding: 16px 24px;
+  margin: 18px -24px 0;
+  gap: 18px;
+}
+.bt-settings-panel .strategy-recipe-row {
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.bt-settings-panel .strategy-recipe-row .form-note {
+  margin: 0;
+}
+.sidebar-nav a {
+  font-size: 12px;
+  padding-left: 10px;
+  padding-right: 10px;
+  gap: 9px;
+}
+.sidebar-promo {
+  padding: 14px;
+}
+.sidebar-promo h2 {
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+#backtest-empty {
+  min-height: 140px;
+  padding: 22px;
+}
 @keyframes studio-arrive {
   from {
     opacity: 0;
@@ -1564,6 +1725,21 @@ dialog::backdrop {
   }
   .sidebar-promo {
     padding: 16px 12px;
+  }
+  .bt-essentials {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .bt-dates-block {
+    padding: 0;
+    border: 0;
+  }
+  .bt-config-actions > .field {
+    width: 200px;
+  }
+  .backtest-controls .bt-config-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 }
 @media (max-width: 900px) {
@@ -1817,6 +1993,50 @@ dialog::backdrop {
   }
   .bt-page-actions .secondary {
     flex: 1 1 auto;
+  }
+  .studio-shell .backtest-controls {
+    padding: 18px 16px 0;
+  }
+  .bt-config-actions {
+    width: 100%;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .bt-config-actions > .field {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+  .bt-config-actions .secondary {
+    padding: 10px;
+    font-size: 12px;
+  }
+  .backtest-controls .bt-config-footer {
+    margin: 18px -16px 0;
+    padding: 16px;
+  }
+  .backtest-controls .bt-period-grid,
+  .bt-data-grid {
+    grid-template-columns: 1fr;
+  }
+  .bt-data-settings > summary {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  #backtest-data-summary {
+    order: 3;
+    margin: 0;
+    text-align: left;
+    flex-basis: 100%;
+  }
+  .bt-details-chevron {
+    margin-left: auto;
+  }
+  .bt-page-actions {
+    justify-content: flex-start;
+  }
+  .bt-downloads {
+    justify-content: flex-start;
   }
   .bt-settings-dialog .form-grid,
   .form-grid,

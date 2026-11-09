@@ -1,0 +1,28 @@
+{
+  "verified_utc": "2026-11-09T03:06:44.052160+00:00",
+  "request": "Fill the browser window and simplify the UI while retaining the dark reference design",
+  "changes": [
+    "Removed outer margins, rounded application frame and maximum page width",
+    "Reduced header and sidebar spacing",
+    "Grouped essential market/strategy and period controls",
+    "Moved cache, source and consistency options into collapsed Data & validation",
+    "Placed higher-timeframe configuration and presets with strategy settings",
+    "Showed download controls only for completed results"
+  ],
+  "checks": {
+    "dom_tests_passed": 40,
+    "javascript_syntax": "passed",
+    "wheel_build": "passed",
+    "packaged_assets_match_source": true,
+    "live_stylesheet_matches_source": true,
+    "saved_trading_controls_unchanged": true
+  },
+  "browser_visual_review": "Unavailable: no browser surface is connected; no rendered-layout claim",
+  "asset_sha256": {
+    "index.html": "1f260107c490999cd3c0c1844bd894e52da05409ca1454383f4ee8617c0080ba",
+    "studio.css": "e134639c70054c28ac1e4875a4e9c54db8107ba4ef5333fb877c6f9c4ab31448",
+    "studio.js": "57590a23bece54aed938e13f87df6100c9aeba91f963d89921b3ae27ece603d0",
+    "research.js": "3655500b60d3ec71a176212c6bd4da422a50a499cb3274705941ad7ef81dc35b",
+    "lab.js": "1b8e1a8bb9f3d0114a3fa868b5452a599450586123c4737853a556cd4a6c0716"
+  }
+}

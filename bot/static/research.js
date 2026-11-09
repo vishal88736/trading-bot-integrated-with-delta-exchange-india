@@ -371,7 +371,9 @@ for (const [section, key] of fields) {
   );
 }
 for (const key of ["symbol", "strategy", "timeframe"])
-  $("backtest-market-inputs").append($(`backtest-setting-${key}`).parentElement);
+  $("backtest-market-inputs").append(
+    $(`backtest-setting-${key}`).parentElement,
+  );
 $("backtest-market-inputs").append($("backtest-balance").parentElement);
 function updateBacktestSummary() {
   const value = (key) => $(`backtest-setting-${key}`).value;
