@@ -353,12 +353,7 @@ for (const [section, key] of fields) {
   const input = copy.querySelector("input,select");
   input.id = `backtest-setting-${key}`;
   input.name = `backtest-${key}`;
-  const primary = [
-    "symbol",
-    "strategy",
-    "timeframe",
-    "higher_timeframe",
-  ].includes(key);
+  const primary = ["symbol", "strategy", "timeframe"].includes(key);
   if (primary) {
     const label = {
       symbol: "Market",
@@ -375,6 +370,9 @@ for (const [section, key] of fields) {
     copy,
   );
 }
+for (const key of ["symbol", "strategy", "timeframe"])
+  $("backtest-market-inputs").append($(`backtest-setting-${key}`).parentElement);
+$("backtest-market-inputs").append($("backtest-balance").parentElement);
 function updateBacktestSummary() {
   const value = (key) => $(`backtest-setting-${key}`).value;
   $("backtest-config-summary").textContent =

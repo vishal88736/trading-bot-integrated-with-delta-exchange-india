@@ -104,6 +104,7 @@ function updateResearchControls() {
     walk_forward:
       "Select settings on earlier data, then replay untouched test folds. Training expands over time.",
   }[mode];
+  $("research-mode-help").classList.toggle("hidden", mode === "single");
   if (!backtestRunning && !backtestSubmitting)
     $("backtest-run").textContent =
       mode === "single" ? "Run backtest ▶" : "Run research ▶";
@@ -441,6 +442,7 @@ function renderResearchJob(job) {
   updateResearchControls();
   const study = job.study;
   $("research-study").classList.toggle("hidden", !study);
+  $("backtest-downloads").classList.toggle("hidden", job.status !== "completed" || !job.result);
   $("research-report").disabled = job.status !== "completed" || !job.result;
   $("research-inputs").disabled =
     job.status !== "completed" || !job.result?.data_quality;
