@@ -164,3 +164,25 @@ def test_partial_date_boundaries_use_only_complete_utc_candles():
     assert result["candles"] == 3
     assert result["actual_start"] == START + 300
     assert result["actual_end"] == START + 1200
+
+
+def test_input_download_route_is_gzipped_and_checks_run_identity(tmp_path):
+    from fastapi.testclient import TestClient
+
+    from bot.web import create_app
+
+    app = create_app(tmp_path)
+    runner = app.state.service.backtests
+    _, lower, higher, result, inputs = fixture_run()
+    runner.remember_inputs(result, lower, higher, PRODUCT)
+    runner.save_result(0, result)
+    with TestClient(app) as client:
+        path = f"/api/backtests/inputs/0?run_id={runner.run_id}"
+        assert client.get(path).status_code == 409
+        runner.job["status"] = "completed"
+        response = client.get(path)
+        assert response.status_code == 200
+        assert "attachment" in response.headers["content-disposition"]
+        assert json.loads(gzip.decompress(response.content)) == inputs
+        assert client.get("/api/backtests/inputs/0?run_id=wrong").status_code == 409
+        assert client.get(f"/api/backtests/inputs/99?run_id={runner.run_id}").status_code == 409

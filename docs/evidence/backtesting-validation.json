@@ -1,0 +1,716 @@
+{
+  "runs": [
+    {
+      "case": "momentum_breakout-one-year",
+      "candles": 105120,
+      "trades": 1607,
+      "net_pnl": -346.8541579225421,
+      "fees": 150.44868812259958,
+      "strategy_exit_legs": 6,
+      "reference_checks": [
+        {
+          "name": "PyBacktestPro",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "trading-strategy-backtesting-suite",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "Backtrader",
+          "status": "passed",
+          "kind": "execution_scenarios"
+        },
+        {
+          "name": "Backtesting.py",
+          "status": "passed",
+          "kind": "strategy_replay"
+        }
+      ],
+      "cost_stress": [
+        {
+          "slippage_bps": 5.0,
+          "status": "completed",
+          "return_percent": -4.192884944611941
+        },
+        {
+          "slippage_bps": 10.0,
+          "status": "completed",
+          "return_percent": -5.407728800670252
+        },
+        {
+          "slippage_bps": 20.0,
+          "status": "completed",
+          "return_percent": -8.602073419225075
+        }
+      ],
+      "signal_check": "passed",
+      "coverage_percent": 100,
+      "ledger_and_costs_reconcile": true,
+      "http_downloads_checked": true,
+      "seconds": 16.2,
+      "start_utc": "2025-11-08T10:20:00+00:00",
+      "end_utc": "2026-11-08T10:20:00+00:00",
+      "symbol": "ETHUSD",
+      "timeframe": "5m",
+      "data_quality": {
+        "status": "passed",
+        "expected_candles": 105120,
+        "actual_candles": 105120,
+        "coverage_percent": 100.0,
+        "data_sha256": "b818ce21464bfa4fa8beaeec2893e12fedff38360a955969f57b6542e065d8af",
+        "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+        "datasets": [
+          {
+            "kind": "signal",
+            "resolution": "5m",
+            "bars_including_warmup": 105720,
+            "zero_volume_bars": 147,
+            "first": 1762417200,
+            "last_close": 1794133200
+          },
+          {
+            "kind": "higher",
+            "resolution": "1h",
+            "bars_including_warmup": 9360,
+            "zero_volume_bars": 2,
+            "first": 1760436000,
+            "last_close": 1794132000
+          }
+        ],
+        "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+      }
+    },
+    {
+      "case": "ema_trend-one-year",
+      "candles": 105120,
+      "trades": 240,
+      "net_pnl": -42.05726080614113,
+      "fees": 22.49697230615001,
+      "strategy_exit_legs": 8,
+      "reference_checks": [
+        {
+          "name": "PyBacktestPro",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "trading-strategy-backtesting-suite",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "Backtrader",
+          "status": "passed",
+          "kind": "execution_scenarios"
+        },
+        {
+          "name": "Backtesting.py",
+          "status": "passed",
+          "kind": "strategy_replay"
+        }
+      ],
+      "cost_stress": [
+        {
+          "slippage_bps": 5.0,
+          "status": "completed",
+          "return_percent": -0.530507125141233
+        },
+        {
+          "slippage_bps": 10.0,
+          "status": "completed",
+          "return_percent": -0.7359870255601031
+        },
+        {
+          "slippage_bps": 20.0,
+          "status": "completed",
+          "return_percent": -1.1601422852498544
+        }
+      ],
+      "signal_check": "passed",
+      "coverage_percent": 100,
+      "ledger_and_costs_reconcile": true,
+      "http_downloads_checked": true,
+      "seconds": 14.56,
+      "start_utc": "2025-11-08T10:20:00+00:00",
+      "end_utc": "2026-11-08T10:20:00+00:00",
+      "symbol": "ETHUSD",
+      "timeframe": "5m",
+      "data_quality": {
+        "status": "passed",
+        "expected_candles": 105120,
+        "actual_candles": 105120,
+        "coverage_percent": 100.0,
+        "data_sha256": "b818ce21464bfa4fa8beaeec2893e12fedff38360a955969f57b6542e065d8af",
+        "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+        "datasets": [
+          {
+            "kind": "signal",
+            "resolution": "5m",
+            "bars_including_warmup": 105720,
+            "zero_volume_bars": 147,
+            "first": 1762417200,
+            "last_close": 1794133200
+          },
+          {
+            "kind": "higher",
+            "resolution": "1h",
+            "bars_including_warmup": 9360,
+            "zero_volume_bars": 2,
+            "first": 1760436000,
+            "last_close": 1794132000
+          }
+        ],
+        "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+      }
+    },
+    {
+      "case": "smc_price_action-one-year",
+      "candles": 105120,
+      "trades": 834,
+      "net_pnl": -163.5097109048529,
+      "fees": 78.54372360485006,
+      "strategy_exit_legs": 38,
+      "reference_checks": [
+        {
+          "name": "PyBacktestPro",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "trading-strategy-backtesting-suite",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "Backtrader",
+          "status": "passed",
+          "kind": "execution_scenarios"
+        },
+        {
+          "name": "Backtesting.py",
+          "status": "passed",
+          "kind": "strategy_replay"
+        }
+      ],
+      "cost_stress": [
+        {
+          "slippage_bps": 5.0,
+          "status": "completed",
+          "return_percent": -2.1164172182104646
+        },
+        {
+          "slippage_bps": 10.0,
+          "status": "completed",
+          "return_percent": -2.905668855607124
+        },
+        {
+          "slippage_bps": 20.0,
+          "status": "completed",
+          "return_percent": -4.384518813819938
+        }
+      ],
+      "signal_check": "passed",
+      "coverage_percent": 100,
+      "ledger_and_costs_reconcile": true,
+      "http_downloads_checked": true,
+      "seconds": 14.65,
+      "start_utc": "2025-11-08T10:20:00+00:00",
+      "end_utc": "2026-11-08T10:20:00+00:00",
+      "symbol": "ETHUSD",
+      "timeframe": "5m",
+      "data_quality": {
+        "status": "passed",
+        "expected_candles": 105120,
+        "actual_candles": 105120,
+        "coverage_percent": 100.0,
+        "data_sha256": "b818ce21464bfa4fa8beaeec2893e12fedff38360a955969f57b6542e065d8af",
+        "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+        "datasets": [
+          {
+            "kind": "signal",
+            "resolution": "5m",
+            "bars_including_warmup": 105720,
+            "zero_volume_bars": 147,
+            "first": 1762417200,
+            "last_close": 1794133200
+          },
+          {
+            "kind": "higher",
+            "resolution": "1h",
+            "bars_including_warmup": 9360,
+            "zero_volume_bars": 2,
+            "first": 1760436000,
+            "last_close": 1794132000
+          }
+        ],
+        "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+      }
+    },
+    {
+      "case": "rsi_reversion-one-year",
+      "candles": 105120,
+      "trades": 314,
+      "net_pnl": -50.79642316445643,
+      "fees": 29.03708826445003,
+      "strategy_exit_legs": 78,
+      "reference_checks": [
+        {
+          "name": "PyBacktestPro",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "trading-strategy-backtesting-suite",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "Backtrader",
+          "status": "passed",
+          "kind": "execution_scenarios"
+        },
+        {
+          "name": "Backtesting.py",
+          "status": "passed",
+          "kind": "strategy_replay"
+        }
+      ],
+      "cost_stress": [
+        {
+          "slippage_bps": 5.0,
+          "status": "completed",
+          "return_percent": -0.7421338516911291
+        },
+        {
+          "slippage_bps": 10.0,
+          "status": "completed",
+          "return_percent": -1.03852647812257
+        },
+        {
+          "slippage_bps": 20.0,
+          "status": "completed",
+          "return_percent": -1.6413298923598774
+        }
+      ],
+      "signal_check": "passed",
+      "coverage_percent": 100,
+      "ledger_and_costs_reconcile": true,
+      "http_downloads_checked": true,
+      "seconds": 14.22,
+      "start_utc": "2025-11-08T10:20:00+00:00",
+      "end_utc": "2026-11-08T10:20:00+00:00",
+      "symbol": "ETHUSD",
+      "timeframe": "5m",
+      "data_quality": {
+        "status": "passed",
+        "expected_candles": 105120,
+        "actual_candles": 105120,
+        "coverage_percent": 100.0,
+        "data_sha256": "b818ce21464bfa4fa8beaeec2893e12fedff38360a955969f57b6542e065d8af",
+        "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+        "datasets": [
+          {
+            "kind": "signal",
+            "resolution": "5m",
+            "bars_including_warmup": 105720,
+            "zero_volume_bars": 147,
+            "first": 1762417200,
+            "last_close": 1794133200
+          },
+          {
+            "kind": "higher",
+            "resolution": "1h",
+            "bars_including_warmup": 9360,
+            "zero_volume_bars": 2,
+            "first": 1760436000,
+            "last_close": 1794132000
+          }
+        ],
+        "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+      }
+    },
+    {
+      "case": "ema-parameters",
+      "candles": 8640,
+      "trades": 24,
+      "net_pnl": -4.120570647450222,
+      "fees": 2.24719334745,
+      "strategy_exit_legs": 1,
+      "reference_checks": [
+        {
+          "name": "PyBacktestPro",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "trading-strategy-backtesting-suite",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "Backtrader",
+          "status": "passed",
+          "kind": "execution_scenarios"
+        },
+        {
+          "name": "Backtesting.py",
+          "status": "passed",
+          "kind": "strategy_replay"
+        }
+      ],
+      "cost_stress": [
+        {
+          "slippage_bps": 5.0,
+          "status": "completed",
+          "return_percent": -0.061740914197472296
+        },
+        {
+          "slippage_bps": 10.0,
+          "status": "completed",
+          "return_percent": -0.07576370917494746
+        },
+        {
+          "slippage_bps": 20.0,
+          "status": "completed",
+          "return_percent": -0.11469117734997925
+        }
+      ],
+      "signal_check": "passed",
+      "coverage_percent": 100,
+      "ledger_and_costs_reconcile": true,
+      "http_downloads_checked": true,
+      "seconds": 2.88,
+      "start_utc": "2026-10-09T10:20:00+00:00",
+      "end_utc": "2026-11-08T10:20:00+00:00",
+      "symbol": "ETHUSD",
+      "timeframe": "5m",
+      "data_quality": {
+        "status": "passed",
+        "expected_candles": 8640,
+        "actual_candles": 8640,
+        "coverage_percent": 100.0,
+        "data_sha256": "06bf2cfbb7bf3c7bd2ca21c3f04ff7df20863fff1d42be53429982634e1dc914",
+        "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+        "datasets": [
+          {
+            "kind": "signal",
+            "resolution": "5m",
+            "bars_including_warmup": 9240,
+            "zero_volume_bars": 9,
+            "first": 1791361200,
+            "last_close": 1794133200
+          },
+          {
+            "kind": "higher",
+            "resolution": "1h",
+            "bars_including_warmup": 1320,
+            "zero_volume_bars": 0,
+            "first": 1789380000,
+            "last_close": 1794132000
+          }
+        ],
+        "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+      }
+    },
+    {
+      "case": "ema-walk-forward",
+      "candles": 10368,
+      "trades": 30,
+      "net_pnl": -4.883515132349203,
+      "fees": 2.90001083235,
+      "strategy_exit_legs": 0,
+      "reference_checks": [
+        {
+          "name": "PyBacktestPro",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "trading-strategy-backtesting-suite",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "Backtrader",
+          "status": "passed",
+          "kind": "execution_scenarios"
+        },
+        {
+          "name": "Backtesting.py",
+          "status": "passed",
+          "kind": "strategy_replay"
+        }
+      ],
+      "cost_stress": [
+        {
+          "slippage_bps": 5.0,
+          "status": "completed",
+          "return_percent": -0.07245837361248286
+        },
+        {
+          "slippage_bps": 10.0,
+          "status": "completed",
+          "return_percent": -0.09683442991498259
+        },
+        {
+          "slippage_bps": 20.0,
+          "status": "completed",
+          "return_percent": -0.14355366108497192
+        }
+      ],
+      "signal_check": "passed",
+      "coverage_percent": 100,
+      "ledger_and_costs_reconcile": true,
+      "http_downloads_checked": true,
+      "seconds": 5.18,
+      "start_utc": "2026-10-03T10:20:00+00:00",
+      "end_utc": "2026-11-08T10:20:00+00:00",
+      "symbol": "ETHUSD",
+      "timeframe": "5m",
+      "data_quality": {
+        "status": "passed",
+        "expected_candles": 10368,
+        "actual_candles": 10368,
+        "coverage_percent": 100.0,
+        "folds": [
+          {
+            "status": "passed",
+            "expected_candles": 5184,
+            "actual_candles": 5184,
+            "coverage_percent": 100.0,
+            "data_sha256": "dd5c124d092c3ae3d1446265d9a88b62f8e4e01bfbf628bf05963e636495da85",
+            "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+            "datasets": [
+              {
+                "kind": "signal",
+                "resolution": "5m",
+                "bars_including_warmup": 5784,
+                "zero_volume_bars": 9,
+                "first": 1790842800,
+                "last_close": 1792578000
+              },
+              {
+                "kind": "higher",
+                "resolution": "1h",
+                "bars_including_warmup": 1032,
+                "zero_volume_bars": 0,
+                "first": 1788861600,
+                "last_close": 1792576800
+              }
+            ],
+            "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+          },
+          {
+            "status": "passed",
+            "expected_candles": 5184,
+            "actual_candles": 5184,
+            "coverage_percent": 100.0,
+            "data_sha256": "663ff3f8edf4371b46a84a33e9d3f9f0d55a1b4f8dc8a88d6de21838e6c79f67",
+            "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+            "datasets": [
+              {
+                "kind": "signal",
+                "resolution": "5m",
+                "bars_including_warmup": 5784,
+                "zero_volume_bars": 0,
+                "first": 1792398000,
+                "last_close": 1794133200
+              },
+              {
+                "kind": "higher",
+                "resolution": "1h",
+                "bars_including_warmup": 1032,
+                "zero_volume_bars": 0,
+                "first": 1790416800,
+                "last_close": 1794132000
+              }
+            ],
+            "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+          }
+        ],
+        "scope": "Each non-overlapping test fold was checked separately; training is excluded."
+      }
+    },
+    {
+      "case": "rsi-risk-spread",
+      "candles": 8640,
+      "trades": 25,
+      "net_pnl": -306.37102192587554,
+      "fees": 232.77305772589997,
+      "strategy_exit_legs": 10,
+      "reference_checks": [
+        {
+          "name": "PyBacktestPro",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "trading-strategy-backtesting-suite",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "Backtrader",
+          "status": "passed",
+          "kind": "execution_scenarios"
+        },
+        {
+          "name": "Backtesting.py",
+          "status": "passed",
+          "kind": "strategy_replay"
+        }
+      ],
+      "cost_stress": [
+        {
+          "slippage_bps": 5.0,
+          "status": "completed",
+          "return_percent": -4.813001928003668
+        },
+        {
+          "slippage_bps": 10.0,
+          "status": "completed",
+          "return_percent": -8.012738704193033
+        },
+        {
+          "slippage_bps": 20.0,
+          "status": "completed",
+          "return_percent": -14.392835557214823
+        }
+      ],
+      "signal_check": "passed",
+      "coverage_percent": 100,
+      "ledger_and_costs_reconcile": true,
+      "http_downloads_checked": true,
+      "seconds": 2.55,
+      "start_utc": "2026-10-09T10:20:00+00:00",
+      "end_utc": "2026-11-08T10:20:00+00:00",
+      "symbol": "ETHUSD",
+      "timeframe": "5m",
+      "data_quality": {
+        "status": "passed",
+        "expected_candles": 8640,
+        "actual_candles": 8640,
+        "coverage_percent": 100.0,
+        "data_sha256": "06bf2cfbb7bf3c7bd2ca21c3f04ff7df20863fff1d42be53429982634e1dc914",
+        "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+        "datasets": [
+          {
+            "kind": "signal",
+            "resolution": "5m",
+            "bars_including_warmup": 9240,
+            "zero_volume_bars": 9,
+            "first": 1791361200,
+            "last_close": 1794133200
+          },
+          {
+            "kind": "higher",
+            "resolution": "1h",
+            "bars_including_warmup": 1320,
+            "zero_volume_bars": 0,
+            "first": 1789380000,
+            "last_close": 1794132000
+          }
+        ],
+        "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+      }
+    },
+    {
+      "case": "multi-coin",
+      "candles": 8352,
+      "trades": 26,
+      "net_pnl": -4.427314246251626,
+      "fees": 2.474867346249999,
+      "strategy_exit_legs": 0,
+      "reference_checks": [
+        {
+          "name": "PyBacktestPro",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "trading-strategy-backtesting-suite",
+          "status": "passed",
+          "kind": "statistics"
+        },
+        {
+          "name": "Backtrader",
+          "status": "passed",
+          "kind": "execution_scenarios"
+        },
+        {
+          "name": "Backtesting.py",
+          "status": "passed",
+          "kind": "strategy_replay"
+        }
+      ],
+      "cost_stress": [
+        {
+          "slippage_bps": 5.0,
+          "status": "completed",
+          "return_percent": -0.06661483427753412
+        },
+        {
+          "slippage_bps": 10.0,
+          "status": "completed",
+          "return_percent": -0.08684047129497996
+        },
+        {
+          "slippage_bps": 20.0,
+          "status": "completed",
+          "return_percent": -0.11750880630497784
+        }
+      ],
+      "signal_check": "passed",
+      "coverage_percent": 100,
+      "ledger_and_costs_reconcile": true,
+      "http_downloads_checked": true,
+      "seconds": 2.98,
+      "start_utc": "2026-10-10T08:00:00+00:00",
+      "end_utc": "2026-11-08T08:00:00+00:00",
+      "symbol": "ETHUSD / BTCUSD comparison; selected ETHUSD",
+      "timeframe": "5m",
+      "data_quality": {
+        "status": "passed",
+        "expected_candles": 8352,
+        "actual_candles": 8352,
+        "coverage_percent": 100.0,
+        "data_sha256": "ba58e5ac1aa821ae20209e8f55f424db04ff883a5f7b7cfe661040741344633b",
+        "code_sha256": "2a2ba017ec5edb234294a8b6bf76268981f825c946b44e5073ef833470db1ab4",
+        "datasets": [
+          {
+            "kind": "signal",
+            "resolution": "5m",
+            "bars_including_warmup": 8952,
+            "zero_volume_bars": 9,
+            "first": 1791439200,
+            "last_close": 1794124800
+          },
+          {
+            "kind": "higher",
+            "resolution": "1h",
+            "bars_including_warmup": 1296,
+            "zero_volume_bars": 0,
+            "first": 1789459200,
+            "last_close": 1794124800
+          }
+        ],
+        "scope": "Complete, ordered, UTC-aligned OHLCV; no synthetic or forward-filled bars. This checks structure, not the exchange's underlying tick accuracy."
+      }
+    }
+  ],
+  "main_runtime_controls_unchanged": true,
+  "exchange_orders_sent": false,
+  "metadata_source": "Read-only public Delta product endpoint",
+  "data_source": "Existing validated Delta public OHLCV cache, same fixed periods as prior audit",
+  "verified_utc": "2026-11-09T02:08:40.256516+00:00",
+  "scope": "Historical simulations; no exchange orders. Read-only public product metadata and previously cached Delta public OHLCV.",
+  "exercise_limits": {
+    "initial_balance": 10000,
+    "max_loss_quote": 100000,
+    "max_notional_quote": 1000000,
+    "note": "Elevated replay limits exercised execution paths; these are not recommended trading limits. Live settings were preserved."
+  }
+}
