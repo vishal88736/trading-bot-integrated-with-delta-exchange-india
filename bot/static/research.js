@@ -34,7 +34,7 @@ function showView(view, remember = true) {
     $(id).classList.toggle("nav-active", name === view);
     $(id).setAttribute("aria-current", name === view ? "page" : "false");
   }
-  document.dispatchEvent(new CustomEvent("workspace-view", {detail: view}));
+  document.dispatchEvent(new CustomEvent("workspace-view", { detail: view }));
   if (view === "account") refreshAccount();
   if (view === "backtest") {
     if (!backtestBase && current) copyBacktestSettings();

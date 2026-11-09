@@ -1,0 +1,68 @@
+{
+  "verified_utc": "2026-11-09T02:45:42.981318+00:00",
+  "reference": "User-supplied Nexus Capital dashboard video and screenshot",
+  "implemented": [
+    "Charcoal dashboard with mint accents and rounded cards",
+    "Sidebar navigation and mobile drawer",
+    "Three runner metrics, price chart, right rail and gold artwork",
+    "Volume and take-profit allocation widgets using source data",
+    "Theme across account, backtesting, settings and dialogs",
+    "Workspace search and keyboard candle inspection"
+  ],
+  "checks": {
+    "python_tests_passed": 244,
+    "dom_tests_passed": 38,
+    "wheel_build": "passed",
+    "new_assets_packaged": true,
+    "main_palette_AA_contrast": [
+      {
+        "pair": "Body text",
+        "contrast": 16.96,
+        "passes_AA_small_text": true
+      },
+      {
+        "pair": "Secondary text",
+        "contrast": 7.22,
+        "passes_AA_small_text": true
+      },
+      {
+        "pair": "Positive text",
+        "contrast": 9.85,
+        "passes_AA_small_text": true
+      },
+      {
+        "pair": "Negative text",
+        "contrast": 8.31,
+        "passes_AA_small_text": true
+      },
+      {
+        "pair": "Primary button",
+        "contrast": 10.47,
+        "passes_AA_small_text": true
+      }
+    ],
+    "live_market_preview": {
+      "status": "passed",
+      "symbol": "ETHUSD",
+      "resolution": "5m",
+      "source": "Delta India demo public market data",
+      "closed_candles": 100,
+      "read_only": true,
+      "cache_reused": true
+    },
+    "saved_trading_controls_unchanged": true,
+    "trading_running": false,
+    "exchange_orders_sent": false,
+    "browser_visual_review": "Unavailable: no browser surface is connected"
+  },
+  "asset_sha256": {
+    "index.html": "cb5e20b5d047afec9201c8168a4c0400373caad77e41fadb80e3ba2b0c60e501",
+    "studio.css": "4d6f7e847a4ac6cadf42f29cb170e718fcd2a55335b8f82532e3e2cdf4989cbb",
+    "studio.js": "8da0eacc3e27798c084ee5e34b112c2adf12767832bc98136fe9e26cec0ed1ff",
+    "coins.svg": "35bfb252856702fd689f7f90b847116eef3940122bdfbf32ff3d8d7123067a82",
+    "app.js": "4f74318a4cdba681fcc839438529d20934929d7a4f6f92f51c9393f7ec521096",
+    "research.js": "4855b57e2d54ed8e0d99227f4f0c5088e599ca0dd7ef9f05971f95f5006db36f",
+    "lab.js": "fe860367ae779ddb95d8b03d3cdfc6bc14a1a04e951f1baf27005b0ac517c4c1"
+  },
+  "scope": "DOM, API, palette and package checks; no rendered-browser or pixel-comparison claim. Account/trading state was preserved."
+}

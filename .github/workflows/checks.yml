@@ -30,6 +30,7 @@ jobs:
       - run: node --check bot/static/research.js
       - run: node --check bot/static/lab.js
       - run: node --check bot/static/strategies.js
+      - run: node --check bot/static/studio.js
       - run: uv build --no-sources
   research:
     runs-on: ubuntu-latest

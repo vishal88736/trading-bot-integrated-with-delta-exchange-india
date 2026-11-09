@@ -127,7 +127,9 @@ async function settle() {
     await new Promise((resolve) => setImmediate(resolve));
 }
 async function dashboard(t, account = ready, status = initial, hash = "") {
-  const css = readFileSync("bot/static/style.css", "utf8");
+  const css = ["style.css", "studio.css"]
+    .map((file) => readFileSync(`bot/static/${file}`, "utf8"))
+    .join("\n");
   const html = readFileSync("bot/static/index.html", "utf8").replace(
     "</head>",
     `<style>${css}</style></head>`,
@@ -155,6 +157,26 @@ async function dashboard(t, account = ready, status = initial, hash = "") {
     calls.push({ url, body });
     let data;
     if (url === "/api/status") data = state;
+    else if (url === "/api/market")
+      data = {
+        read_only: true,
+        symbol: state.settings.symbol,
+        resolution: state.settings.timeframe,
+        source: "Fixture demo preview",
+        price: 104,
+        quote: "USD",
+        fetched_at: 1700006000,
+        stale: false,
+        error: null,
+        candles: Array.from({ length: 24 }, (_, i) => ({
+          time: 1700000100 + i * 300,
+          open: 100 + i * 0.1,
+          high: 102 + i * 0.1,
+          low: 99 + i * 0.1,
+          close: 101 + i * 0.1,
+          volume: 10 + i,
+        })),
+      };
     else if (url.startsWith("/api/account")) data = account;
     else if (url === "/api/backtests")
       data = body
@@ -166,7 +188,13 @@ async function dashboard(t, account = ready, status = initial, hash = "") {
     } else data = { saved: true };
     return { ok: true, json: async () => structuredClone(data) };
   };
-  for (const file of ["strategies.js", "app.js", "research.js", "lab.js"])
+  for (const file of [
+    "strategies.js",
+    "app.js",
+    "research.js",
+    "lab.js",
+    "studio.js",
+  ])
     new vm.Script(readFileSync(`bot/static/${file}`, "utf8"), {
       filename: file,
     }).runInContext(dom.getInternalVMContext());
@@ -203,6 +231,224 @@ test("parameter research submits a bounded grid without changing the runner", as
   assert.ok(
     !calls.some((call) => ["/api/start", "/api/settings"].includes(call.url)),
   );
+});
+
+test("reference layout loads real preview data without starting the runner", async (t) => {
+  const { document: d, calls, state } = await dashboard(t);
+  assert.ok(d.querySelector(".sidebar .brand"));
+  assert.equal(d.querySelectorAll(".runner-stats article").length, 3);
+  assert.ok(d.querySelector(".dashboard-rail .strategy-promo"));
+  assert.equal(
+    d.querySelector(".promo-coins").getAttribute("src"),
+    "/static/coins.svg",
+  );
+  assert.match(
+    d.getElementById("feed-status").textContent,
+    /Read-only demo preview/,
+  );
+  assert.equal(d.getElementById("price-value").textContent, "104.00");
+  assert.ok(d.querySelector("#chart path[stroke]"));
+  assert.equal(d.querySelectorAll("#market-volume-chart rect").length, 24);
+  assert.equal(d.getElementById("volume-total").textContent, "516");
+  assert.match(
+    d.getElementById("allocation-legend").textContent,
+    /TP1.*2.*50%/,
+  );
+  assert.equal(state.running, false);
+  assert.ok(calls.some((call) => call.url === "/api/market"));
+  assert.ok(
+    !calls.some((call) => ["/api/start", "/api/settings"].includes(call.url)),
+  );
+});
+
+test("workspace search filters and navigates using the keyboard", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  d.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "k",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  assert.equal(d.getElementById("workspace-search-dialog").open, true);
+  const input = d.getElementById("workspace-search-input");
+  assert.equal(d.activeElement, input);
+  input.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "ArrowUp",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  assert.equal(
+    d.activeElement,
+    [...d.querySelectorAll("#workspace-search-results button")].at(-1),
+  );
+  input.focus();
+  input.value = "wallet";
+  input.dispatchEvent(new w.Event("input"));
+  assert.equal(
+    d.querySelectorAll("#workspace-search-results button").length,
+    1,
+  );
+  assert.match(
+    d.getElementById("workspace-search-results").textContent,
+    /Funds & holdings/,
+  );
+  input.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "Enter",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  await settle();
+  assert.equal(d.getElementById("workspace-search-dialog").open, false);
+  assert.equal(
+    d.getElementById("account-view").classList.contains("hidden"),
+    false,
+  );
+  assert.equal(
+    d.getElementById("account-tab").getAttribute("aria-current"),
+    "page",
+  );
+  assert.equal(d.title, "Delta Studio · Funds & holdings");
+  d.getElementById("workspace-search-open").click();
+  input.value = "nonexistent";
+  input.dispatchEvent(new w.Event("input"));
+  assert.match(
+    d.getElementById("workspace-search-results").textContent,
+    /No matching page/,
+  );
+  input.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  assert.equal(d.getElementById("workspace-search-dialog").open, false);
+  assert.equal(d.activeElement, d.getElementById("workspace-search-open"));
+  assert.ok(
+    !calls.some((call) => ["/api/start", "/api/settings"].includes(call.url)),
+  );
+});
+
+test("mobile sidebar traps focus, closes on escape and restores its trigger", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  const toggle = d.getElementById("sidebar-toggle");
+  // JSDOM does not apply media-query layout; expose the mocked mobile trigger.
+  toggle.style.display = "inline-flex";
+  toggle.click();
+  assert.equal(toggle.getAttribute("aria-expanded"), "true");
+  assert.equal(d.getElementById("main-content").inert, true);
+  const first = d.querySelector(".sidebar a"),
+    last = [...d.querySelectorAll(".sidebar a,.sidebar button")].at(-1);
+  last.focus();
+  last.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "Tab",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  assert.equal(d.activeElement, first);
+  first.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  assert.equal(toggle.getAttribute("aria-expanded"), "false");
+  assert.equal(d.activeElement, toggle);
+  assert.equal(d.getElementById("main-content").inert, false);
+  toggle.click();
+  d.getElementById("backtest-tab").click();
+  assert.equal(
+    d.getElementById("backtest-view").classList.contains("hidden"),
+    false,
+  );
+  assert.equal(toggle.getAttribute("aria-expanded"), "false");
+  assert.equal(d.getElementById("workspace-sidebar").inert, true);
+});
+
+test("area and candle controls preserve data and keyboard candle inspection", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  const candle = d.querySelector('[data-chart-style="candles"]');
+  candle.click();
+  assert.equal(candle.getAttribute("aria-pressed"), "true");
+  assert.equal(d.querySelector("#chart path[stroke]"), null);
+  assert.equal(d.querySelectorAll("#chart rect").length, 48);
+  const chart = d.getElementById("chart");
+  chart.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "Home",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  assert.equal(
+    d.getElementById("market-chart-tooltip").classList.contains("hidden"),
+    false,
+  );
+  assert.match(
+    d.getElementById("market-chart-tooltip").textContent,
+    /O 100.00.*H 102.00/s,
+  );
+  chart.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "End",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  assert.match(
+    d.getElementById("market-chart-tooltip").textContent,
+    /C 103.30/,
+  );
+  chart.dispatchEvent(
+    new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+  );
+  assert.equal(
+    d.getElementById("market-chart-tooltip").classList.contains("hidden"),
+    true,
+  );
+  d.querySelector('[data-chart-style="area"]').click();
+  assert.ok(d.querySelector("#chart path[stroke]"));
+  assert.ok(!calls.some((call) => call.url === "/api/start"));
+});
+
+test("a failed preview refresh marks the cached prices stale", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  w.fetch = async () => {
+    throw new Error("transport down");
+  };
+  d.getElementById("market-refresh").click();
+  await settle();
+  assert.match(d.getElementById("feed-status").textContent, /Preview stale/);
+  assert.match(
+    d.getElementById("price-sub").textContent,
+    /Cached demo preview/,
+  );
+  assert.equal(d.getElementById("price-value").textContent, "104.00");
+  assert.equal(d.getElementById("market-refresh").disabled, false);
+});
+
+test("risk-percent allocation stays a plan until actual contract quantities exist", async (t) => {
+  const status = structuredClone(initial);
+  status.settings.sizing_mode = "risk_percent";
+  const { document: d } = await dashboard(t, ready, status);
+  assert.match(
+    d.getElementById("allocation-caption").textContent,
+    /Risk-sized at entry/,
+  );
+  assert.match(
+    d.getElementById("allocation-legend").textContent,
+    /TP150%TP225%TP325%/,
+  );
+  assert.equal(d.getElementById("position-value").textContent, "Flat");
 });
 
 test("costs, data coverage and independent replay have distinct result labels", async (t) => {

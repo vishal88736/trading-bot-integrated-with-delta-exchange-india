@@ -13,164 +13,480 @@
     <script src="/static/studio.js" defer></script>
   </head>
   <body>
-    <svg class="studio-icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
-      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
-      <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 7H5a2 2 0 0 1 0-4h13v4M3 5v14a2 2 0 0 0 2 2h15V7M20 11h-6v6h6"/><path d="M16 14h1"/></symbol>
-      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 3v17h17M7 15l4-5 4 3 6-8"/></symbol>
-      <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M6 3v5m0 6v7M12 3v10m0 5v3M18 3v2m0 6v10"/><rect x="3" y="8" width="6" height="6" rx="2"/><rect x="9" y="12" width="6" height="6" rx="2"/><rect x="15" y="5" width="6" height="6" rx="2"/></symbol>
-      <symbol id="i-activity" viewBox="0 0 24 24"><path d="M2 12h5l3-8 4 16 3-8h5"/></symbol>
-      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
-      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 19 19 5M5 5h14v14"/></symbol>
-      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
-      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
-      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
-      <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></symbol>
-      <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5v16M12 5C8 2 3 3 3 3v16s5-1 9 2c4-3 9-2 9-2V3s-5-1-9 2Z"/></symbol>
-    </defs></svg>
+    <svg
+      class="studio-icon-defs"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <symbol id="i-grid" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </symbol>
+        <symbol id="i-wallet" viewBox="0 0 24 24">
+          <path
+            d="M20 7H5a2 2 0 0 1 0-4h13v4M3 5v14a2 2 0 0 0 2 2h15V7M20 11h-6v6h6"
+          />
+          <path d="M16 14h1" />
+        </symbol>
+        <symbol id="i-chart" viewBox="0 0 24 24">
+          <path d="M4 3v17h17M7 15l4-5 4 3 6-8" />
+        </symbol>
+        <symbol id="i-sliders" viewBox="0 0 24 24">
+          <path d="M6 3v5m0 6v7M12 3v10m0 5v3M18 3v2m0 6v10" />
+          <rect x="3" y="8" width="6" height="6" rx="2" />
+          <rect x="9" y="12" width="6" height="6" rx="2" />
+          <rect x="15" y="5" width="6" height="6" rx="2" />
+        </symbol>
+        <symbol id="i-activity" viewBox="0 0 24 24">
+          <path d="M2 12h5l3-8 4 16 3-8h5" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 5 5" />
+        </symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24">
+          <path d="M5 19 19 5M5 5h14v14" />
+        </symbol>
+        <symbol id="i-bell" viewBox="0 0 24 24">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+        </symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M6 18 18 6" />
+        </symbol>
+        <symbol id="i-shield" viewBox="0 0 24 24">
+          <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z" />
+          <path d="m8 12 3 3 5-6" />
+        </symbol>
+        <symbol id="i-book" viewBox="0 0 24 24">
+          <path
+            d="M12 5v16M12 5C8 2 3 3 3 3v16s5-1 9 2c4-3 9-2 9-2V3s-5-1-9 2Z"
+          />
+        </symbol>
+      </defs>
+    </svg>
     <a class="skip-link" href="#main-content">Skip to workspace</a>
     <div class="studio-shell">
-      <button id="sidebar-backdrop" class="sidebar-backdrop hidden" aria-label="Close navigation" tabindex="-1"></button>
-      <aside class="sidebar" id="workspace-sidebar" aria-label="Workspace sidebar">
-        <a class="brand" href="#automation" aria-label="Delta Studio home"><span class="brand-mark" aria-hidden="true">Δ</span><span>Delta <b>Studio</b></span></a>
+      <button
+        id="sidebar-backdrop"
+        class="sidebar-backdrop hidden"
+        aria-label="Close navigation"
+        tabindex="-1"
+      ></button>
+      <aside
+        class="sidebar"
+        id="workspace-sidebar"
+        aria-label="Workspace sidebar"
+      >
+        <a class="brand" href="#automation" aria-label="Delta Studio home"
+          ><span class="brand-mark" aria-hidden="true">Δ</span
+          ><span>Delta <b>Studio</b></span></a
+        >
         <nav class="sidebar-nav" aria-label="Main navigation">
           <div class="nav-section-label">WORKSPACE</div>
-          <button class="nav-active" id="overview-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-grid"/></svg><span>Overview</span></button>
-          <button id="account-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-wallet"/></svg><span>Funds &amp; holdings</span></button>
-          <button id="backtest-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-chart"/></svg><span>Backtesting</span><span class="nav-tag">FREE</span></button>
+          <button class="nav-active" id="overview-tab">
+            <svg class="ui-icon" aria-hidden="true"><use href="#i-grid" /></svg
+            ><span>Overview</span>
+          </button>
+          <button id="account-tab">
+            <svg class="ui-icon" aria-hidden="true">
+              <use href="#i-wallet" /></svg
+            ><span>Funds &amp; holdings</span>
+          </button>
+          <button id="backtest-tab">
+            <svg class="ui-icon" aria-hidden="true"><use href="#i-chart" /></svg
+            ><span>Backtesting</span><span class="nav-tag">FREE</span>
+          </button>
           <div class="nav-section-label">AUTOMATION</div>
-          <button id="strategy-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-sliders"/></svg><span>Strategy settings</span></button>
-          <button id="activity-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-activity"/></svg><span>Activity log</span></button>
+          <button id="strategy-tab">
+            <svg class="ui-icon" aria-hidden="true">
+              <use href="#i-sliders" /></svg
+            ><span>Strategy settings</span>
+          </button>
+          <button id="activity-tab">
+            <svg class="ui-icon" aria-hidden="true">
+              <use href="#i-activity" /></svg
+            ><span>Activity log</span>
+          </button>
           <div class="nav-section-label">RESOURCES</div>
-          <a href="https://github.com/vishal88736/trading-bot-integrated-with-delta-exchange-india/blob/main/docs/backtesting.md" target="_blank" rel="noopener noreferrer"><svg class="ui-icon" aria-hidden="true"><use href="#i-book"/></svg><span>Backtesting guide</span><span aria-hidden="true">↗</span></a>
+          <a
+            href="https://github.com/vishal88736/trading-bot-integrated-with-delta-exchange-india/blob/main/docs/backtesting.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            ><svg class="ui-icon" aria-hidden="true"><use href="#i-book" /></svg
+            ><span>Backtesting guide</span><span aria-hidden="true">↗</span></a
+          >
         </nav>
         <div class="sidebar-bottom">
-          <div class="sidebar-promo"><span class="mini-label">BUILT AROUND YOU</span><h2>Your rules.<br>Your next move.</h2><p>Find your edge. Put it to the test.</p><button type="button" data-studio-action="backtest">Explore backtesting <span aria-hidden="true">↗</span></button><span class="promo-orbit" aria-hidden="true">Δ</span></div>
-          <div class="sidebar-environment"><span class="dot"></span> Delta India <span>Demo workspace</span></div>
+          <div class="sidebar-promo">
+            <span class="mini-label">BUILT AROUND YOU</span>
+            <h2>Your rules.<br />Your next move.</h2>
+            <p>Find your edge. Put it to the test.</p>
+            <button type="button" data-studio-action="backtest">
+              Explore backtesting <span aria-hidden="true">↗</span></button
+            ><span class="promo-orbit" aria-hidden="true">Δ</span>
+          </div>
+          <div class="sidebar-environment">
+            <span class="dot"></span> Delta India <span>Demo workspace</span>
+          </div>
         </div>
       </aside>
       <header class="topbar">
         <div class="topbar-leading">
-          <button type="button" class="icon-button sidebar-toggle" id="sidebar-toggle" aria-label="Open navigation" aria-controls="workspace-sidebar" aria-expanded="false"><svg class="ui-icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
-          <button type="button" class="workspace-search" id="workspace-search-open" aria-label="Search workspace"><svg class="ui-icon" aria-hidden="true"><use href="#i-search"/></svg><span>Search workspace</span><kbd>Ctrl K</kbd></button>
-          <span class="workspace-breadcrumb">Workspace <span aria-hidden="true">/</span> <strong id="workspace-page-label">Overview</strong></span>
+          <button
+            type="button"
+            class="icon-button sidebar-toggle"
+            id="sidebar-toggle"
+            aria-label="Open navigation"
+            aria-controls="workspace-sidebar"
+            aria-expanded="false"
+          >
+            <svg class="ui-icon" aria-hidden="true"><use href="#i-menu" /></svg>
+          </button>
+          <button
+            type="button"
+            class="workspace-search"
+            id="workspace-search-open"
+            aria-label="Search workspace"
+          >
+            <svg class="ui-icon" aria-hidden="true">
+              <use href="#i-search" /></svg
+            ><span>Search workspace</span><kbd>Ctrl K</kbd>
+          </button>
+          <span class="workspace-breadcrumb"
+            >Workspace <span aria-hidden="true">/</span>
+            <strong id="workspace-page-label">Overview</strong></span
+          >
         </div>
         <div class="header-status">
-          <button type="button" id="execution-mode-button" class="execution-mode-pill"><span class="dot"></span><span id="execution-mode-label">Checking mode…</span></button>
-          <button type="button" class="icon-button header-activity" data-studio-action="activity" aria-label="View recent activity"><svg class="ui-icon" aria-hidden="true"><use href="#i-bell"/></svg></button>
-          <button class="connection-pill" id="connection-button" aria-label="Open Delta demo account connection settings"><span class="avatar">D</span><span class="connection-copy"><strong>Delta Exchange</strong><span><i class="dot gray"></i><span id="connection-label">Demo account connection</span></span></span></button>
+          <button
+            type="button"
+            id="execution-mode-button"
+            class="execution-mode-pill"
+          >
+            <span class="dot"></span
+            ><span id="execution-mode-label">Checking mode…</span>
+          </button>
+          <button
+            type="button"
+            class="icon-button header-activity"
+            data-studio-action="activity"
+            aria-label="View recent activity"
+          >
+            <svg class="ui-icon" aria-hidden="true"><use href="#i-bell" /></svg>
+          </button>
+          <button
+            class="connection-pill"
+            id="connection-button"
+            aria-label="Open Delta demo account connection settings"
+          >
+            <span class="avatar">D</span
+            ><span class="connection-copy"
+              ><strong>Delta Exchange</strong
+              ><span
+                ><i class="dot gray"></i
+                ><span id="connection-label"
+                  >Demo account connection</span
+                ></span
+              ></span
+            >
+          </button>
         </div>
       </header>
       <main id="main-content" tabindex="-1">
-
-      <div id="automation-view">
-        <div class="page-heading">
-          <div>
-            <div class="eyebrow">YOUR WORKSPACE, IN SYNC</div>
-            <h1>Trading overview<span class="title-dot">.</span></h1>
-            <p>A view of the market. A strategy of your own.</p>
-          </div>
-          <div class="heading-actions">
-            <button
-              class="icon-button"
-              id="settings-button"
-              aria-label="Open settings"
-            >
-              ⚙</button
-            ><button class="secondary" id="stop-button" disabled>Pause</button
-            ><button class="primary" id="start-button">
-              <span>▶</span> Start paper run
-            </button>
-          </div>
-        </div>
-        <div id="notice" class="notice" role="status" aria-live="polite">
-          Paper mode uses Delta demo market data. No exchange orders are sent.
-        </div>
-        <div class="dashboard-grid"><div class="dashboard-primary">
-        <section class="stats runner-stats" aria-label="Runner metrics">
-          <article>
-            <span>Automation status</span
-            ><strong id="status-value"
-              >Ready <small class="pill muted">IDLE</small></strong
-            >
-            <p id="status-sub">Waiting for you to start</p>
-          </article>
-          <article>
-            <span>Market price <small id="symbol-label">BTCUSD</small></span
-            ><strong id="price-value">—</strong>
-            <p id="price-sub">Demo market feed</p>
-          </article>
-          <article>
-            <span>Realized estimate <small id="mode-label">PAPER</small></span
-            ><strong id="pnl-value">—</strong>
-            <p>Bot fills only · quote currency</p>
-          </article>
-        </section>
-        <section class="workspace" aria-label="Strategy workspace">
-          <div class="workspace-top">
-            <div class="market-tab">
-              <span class="coin">₿</span
-              ><strong id="market-symbol">BTCUSD</strong
-              ><span class="divider"></span><span id="timeframe-label">5m</span
-              ><span class="demo-label">DEMO MARKET DATA</span>
+        <div id="automation-view">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow">YOUR WORKSPACE, IN SYNC</div>
+              <h1>Trading overview<span class="title-dot">.</span></h1>
+              <p>A view of the market. A strategy of your own.</p>
             </div>
-            <span class="feed-label" id="feed-status"
-              ><span class="dot gray"></span> Awaiting market data</span
-            >
+            <div class="heading-actions">
+              <button
+                class="icon-button"
+                id="settings-button"
+                aria-label="Open settings"
+              >
+                ⚙</button
+              ><button class="secondary" id="stop-button" disabled>Pause</button
+              ><button class="primary" id="start-button">
+                <span>▶</span> Start paper run
+              </button>
+            </div>
           </div>
-          <div class="workspace-body">
-            <section class="chart-panel" aria-label="Price chart">
-              <div class="panel-heading">
-                <div>
-                  <h2>Market overview</h2>
-                  <span id="chart-caption"
-                    >Closed candles · entries after candle close</span
+          <div id="notice" class="notice" role="status" aria-live="polite">
+            Paper mode uses Delta demo market data. No exchange orders are sent.
+          </div>
+          <div class="dashboard-grid">
+            <div class="dashboard-primary">
+              <section class="stats runner-stats" aria-label="Runner metrics">
+                <article>
+                  <span>Automation status</span
+                  ><strong id="status-value"
+                    >Ready <small class="pill muted">IDLE</small></strong
+                  >
+                  <p id="status-sub">Waiting for you to start</p>
+                </article>
+                <article>
+                  <span
+                    >Market price <small id="symbol-label">BTCUSD</small></span
+                  ><strong id="price-value">—</strong>
+                  <p id="price-sub">Demo market feed</p>
+                </article>
+                <article>
+                  <span
+                    >Realized estimate
+                    <small id="mode-label">PAPER</small></span
+                  ><strong id="pnl-value">—</strong>
+                  <p>Bot fills only · quote currency</p>
+                </article>
+              </section>
+              <section class="workspace" aria-label="Strategy workspace">
+                <div class="workspace-top">
+                  <div class="market-tab">
+                    <span class="coin">₿</span
+                    ><strong id="market-symbol">BTCUSD</strong
+                    ><span class="divider"></span
+                    ><span id="timeframe-label">5m</span
+                    ><span class="demo-label">DEMO MARKET DATA</span>
+                  </div>
+                  <span class="feed-label" id="feed-status"
+                    ><span class="dot gray"></span> Awaiting market data</span
                   >
                 </div>
-                <div class="chart-tools"><div class="chart-style-controls" role="group" aria-label="Chart display"><button type="button" data-chart-style="area" aria-pressed="true">Area</button><button type="button" data-chart-style="candles" aria-pressed="false">Candles</button></div><button
-                  class="tiny-button"
-                  id="chart-settings"
-                  aria-label="Change chart settings"
-                >
-                  •••
-                </button></div>
-              </div>
-              <div class="market-chart-summary"><strong id="chart-close-price">—</strong><span id="chart-window-change" class="market-change">No candles loaded</span><span class="chart-price-note">Latest closed candle</span><button type="button" id="market-refresh" class="tiny-button" aria-label="Refresh read-only market preview">↻</button></div>
-              <div class="chart-wrap">
-                <svg
-                  id="chart" tabindex="0"
-                  viewBox="0 0 700 300"
-                  role="img"
-                  aria-label="Price chart of closed Delta demo candles"
-                ></svg>
-                <div class="chart-tooltip hidden" id="market-chart-tooltip" role="status"></div>
-                <div class="chart-empty" id="chart-empty">
-                  <div class="empty-icon">⌁</div>
-                  <h3>Your market, in focus.</h3>
-                  <p>
-                    Loading a read-only market preview.<br />Your trading runner can stay paused.
-                  </p>
+                <div class="workspace-body">
+                  <section class="chart-panel" aria-label="Price chart">
+                    <div class="panel-heading">
+                      <div>
+                        <h2>Market overview</h2>
+                        <span id="chart-caption"
+                          >Closed candles · entries after candle close</span
+                        >
+                      </div>
+                      <div class="chart-tools">
+                        <div
+                          class="chart-style-controls"
+                          role="group"
+                          aria-label="Chart display"
+                        >
+                          <button
+                            type="button"
+                            data-chart-style="area"
+                            aria-pressed="true"
+                          >
+                            Area</button
+                          ><button
+                            type="button"
+                            data-chart-style="candles"
+                            aria-pressed="false"
+                          >
+                            Candles
+                          </button>
+                        </div>
+                        <button
+                          class="tiny-button"
+                          id="chart-settings"
+                          aria-label="Change chart settings"
+                        >
+                          •••
+                        </button>
+                      </div>
+                    </div>
+                    <div class="market-chart-summary">
+                      <strong id="chart-close-price">—</strong
+                      ><span id="chart-window-change" class="market-change"
+                        >No candles loaded</span
+                      ><span class="chart-price-note">Latest closed candle</span
+                      ><button
+                        type="button"
+                        id="market-refresh"
+                        class="tiny-button"
+                        aria-label="Refresh read-only market preview"
+                      >
+                        ↻
+                      </button>
+                    </div>
+                    <div class="chart-wrap">
+                      <svg
+                        id="chart"
+                        tabindex="0"
+                        viewBox="0 0 700 300"
+                        role="img"
+                        aria-label="Price chart of closed Delta demo candles"
+                      ></svg>
+                      <div
+                        class="chart-tooltip hidden"
+                        id="market-chart-tooltip"
+                        role="status"
+                      ></div>
+                      <div class="chart-empty" id="chart-empty">
+                        <div class="empty-icon">⌁</div>
+                        <h3>Your market, in focus.</h3>
+                        <p>
+                          Loading a read-only market preview.<br />Your trading
+                          runner can stay paused.
+                        </p>
+                      </div>
+                    </div>
+                    <div class="chart-footer">
+                      <span><i class="legend-dot green"></i> Demo market</span
+                      ><span
+                        ><i class="legend-dot violet"></i> Saved trade
+                        levels</span
+                      ><span id="last-candle">No candles yet</span>
+                    </div>
+                  </section>
                 </div>
+              </section>
+              <div class="insight-grid">
+                <section
+                  class="data-panel volume-panel"
+                  aria-labelledby="volume-title"
+                >
+                  <div class="section-heading">
+                    <div>
+                      <span class="mini-label">MARKET ACTIVITY</span>
+                      <h2 id="volume-title">Trading volume</h2>
+                    </div>
+                    <span class="pill neutral">24 candles</span>
+                  </div>
+                  <strong id="volume-total" class="insight-total">—</strong>
+                  <p class="form-note" id="volume-caption">
+                    Closed candles · exchange-reported units
+                  </p>
+                  <svg
+                    id="market-volume-chart"
+                    viewBox="0 0 440 145"
+                    role="img"
+                    aria-label="Volume of the last 24 closed demo candles"
+                  ></svg>
+                  <p id="volume-empty" class="form-note">
+                    Volume appears with the market preview.
+                  </p>
+                </section>
+                <section
+                  class="data-panel allocation-panel"
+                  aria-labelledby="allocation-title"
+                >
+                  <div class="section-heading">
+                    <div>
+                      <span class="mini-label">YOUR EXIT PLAN</span>
+                      <h2 id="allocation-title">Exit allocation</h2>
+                    </div>
+                    <svg class="ui-icon" aria-hidden="true">
+                      <use href="#i-shield" />
+                    </svg>
+                  </div>
+                  <div class="allocation-content">
+                    <div
+                      class="allocation-ring"
+                      id="allocation-ring"
+                      role="img"
+                      aria-label="Three-part take-profit allocation"
+                    >
+                      <div>
+                        <span id="allocation-center-label">Exit stages</span
+                        ><strong id="allocation-center-value">3</strong>
+                      </div>
+                    </div>
+                    <dl id="allocation-legend" class="allocation-legend"></dl>
+                  </div>
+                  <p class="form-note" id="allocation-caption">
+                    Half, quarter, and the remaining contracts.
+                  </p>
+                </section>
               </div>
-              <div class="chart-footer">
-                <span><i class="legend-dot green"></i> Demo market</span
-                ><span><i class="legend-dot violet"></i> Saved trade levels</span
-                ><span id="last-candle">No candles yet</span>
-              </div>
-            </section>
-
+            </div>
+            <aside
+              class="dashboard-rail"
+              aria-label="Strategy and position summary"
+            >
+              <section class="strategy-promo">
+                <span class="mini-label">MADE FOR YOUR STRATEGY</span>
+                <h2>
+                  Your strategy.<br />On autopilot<span
+                    class="sparkle"
+                    aria-hidden="true"
+                    >✦</span
+                  >
+                </h2>
+                <p>
+                  Build your rules. Test every decision before your next move.
+                </p>
+                <button type="button" data-studio-action="backtest">
+                  Explore backtesting <span aria-hidden="true">↗</span></button
+                ><img
+                  src="/static/coins.svg"
+                  alt=""
+                  class="promo-coins"
+                  width="280"
+                  height="240"
+                />
+              </section>
+              <section
+                class="data-panel position-panel"
+                aria-labelledby="position-panel-title"
+              >
+                <div class="section-heading">
+                  <h2 id="position-panel-title">Position monitor</h2>
+                  <span class="dot gray" id="position-monitor-dot"></span>
+                </div>
+                <p id="position-source-label" class="form-note">
+                  Paper simulation · runner paused
+                </p>
+                <div class="position-headline">
+                  <strong id="position-value">Flat</strong
+                  ><span id="position-market-label">BTCUSD</span>
+                </div>
+                <p id="position-sub" class="form-note">No active trade</p>
+                <dl class="position-levels">
+                  <div>
+                    <dt>Current stop loss</dt>
+                    <dd id="stop-value">—</dd>
+                  </div>
+                  <div>
+                    <dt>Next target</dt>
+                    <dd id="position-next-target">—</dd>
+                  </div>
+                </dl>
+                <p id="stop-sub" class="form-note">Moves after each target</p>
+                <div class="monitor-status" id="monitor-status">
+                  <span class="dot gray"></span
+                  ><span id="monitor-status-label">Waiting for a trade</span>
+                </div>
+              </section>
+              <section class="data-panel strategy-focus">
+                <span class="mini-label">STRATEGY IN FOCUS</span>
+                <h2 id="strategy-focus-name">EMA / CMO trend</h2>
+                <p id="strategy-focus-timeframes" class="form-note">
+                  5m signals · 1h confirmation
+                </p>
+                <button
+                  type="button"
+                  class="text-action"
+                  data-studio-action="settings"
+                >
+                  Adjust your rules <span aria-hidden="true">↗</span>
+                </button>
+              </section>
+            </aside>
           </div>
-        </section>
-        <div class="insight-grid">
-          <section class="data-panel volume-panel" aria-labelledby="volume-title"><div class="section-heading"><div><span class="mini-label">MARKET ACTIVITY</span><h2 id="volume-title">Trading volume</h2></div><span class="pill neutral">24 candles</span></div><strong id="volume-total" class="insight-total">—</strong><p class="form-note" id="volume-caption">Closed candles · exchange-reported units</p><svg id="market-volume-chart" viewBox="0 0 440 145" role="img" aria-label="Volume of the last 24 closed demo candles"></svg><p id="volume-empty" class="form-note">Volume appears with the market preview.</p></section>
-          <section class="data-panel allocation-panel" aria-labelledby="allocation-title"><div class="section-heading"><div><span class="mini-label">YOUR EXIT PLAN</span><h2 id="allocation-title">Exit allocation</h2></div><svg class="ui-icon" aria-hidden="true"><use href="#i-shield"/></svg></div><div class="allocation-content"><div class="allocation-ring" id="allocation-ring" role="img" aria-label="Three-part take-profit allocation"><div><span id="allocation-center-label">Exit stages</span><strong id="allocation-center-value">3</strong></div></div><dl id="allocation-legend" class="allocation-legend"></dl></div><p class="form-note" id="allocation-caption">Half, quarter, and the remaining contracts.</p></section>
-        </div>
-        </div>
-        <aside class="dashboard-rail" aria-label="Strategy and position summary">
-          <section class="strategy-promo"><span class="mini-label">MADE FOR YOUR STRATEGY</span><h2>Your strategy.<br>On autopilot<span class="sparkle" aria-hidden="true">✦</span></h2><p>Build your rules. Test every decision before your next move.</p><button type="button" data-studio-action="backtest">Explore backtesting <span aria-hidden="true">↗</span></button><img src="/static/coins.svg" alt="" class="promo-coins" width="280" height="240"></section>
-          <section class="data-panel position-panel" aria-labelledby="position-panel-title"><div class="section-heading"><h2 id="position-panel-title">Position monitor</h2><span class="dot gray" id="position-monitor-dot"></span></div><p id="position-source-label" class="form-note">Paper simulation · runner paused</p><div class="position-headline"><strong id="position-value">Flat</strong><span id="position-market-label">BTCUSD</span></div><p id="position-sub" class="form-note">No active trade</p><dl class="position-levels"><div><dt>Current stop loss</dt><dd id="stop-value">—</dd></div><div><dt>Next target</dt><dd id="position-next-target">—</dd></div></dl><p id="stop-sub" class="form-note">Moves after each target</p><div class="monitor-status" id="monitor-status"><span class="dot gray"></span><span id="monitor-status-label">Waiting for a trade</span></div></section>
-          <section class="data-panel strategy-focus"><span class="mini-label">STRATEGY IN FOCUS</span><h2 id="strategy-focus-name">EMA / CMO trend</h2><p id="strategy-focus-timeframes" class="form-note">5m signals · 1h confirmation</p><button type="button" class="text-action" data-studio-action="settings">Adjust your rules <span aria-hidden="true">↗</span></button></section>
-        </aside></div>
-        <details class="strategy-blueprint"><summary><span><svg class="ui-icon" aria-hidden="true"><use href="#i-sliders"/></svg>Strategy blueprint</span><span>View your execution rules <span aria-hidden="true">⌄</span></span></summary>
+          <details class="strategy-blueprint">
+            <summary>
+              <span
+                ><svg class="ui-icon" aria-hidden="true">
+                  <use href="#i-sliders" /></svg
+                >Strategy blueprint</span
+              ><span
+                >View your execution rules
+                <span aria-hidden="true">⌄</span></span
+              >
+            </summary>
             <section class="flow-panel" aria-label="Strategy flow">
               <div class="panel-heading">
                 <div>
@@ -261,991 +577,1053 @@
                   <span class="pill neutral" id="flow-ready">READY</span>
                 </div>
               </div>
-            </section></details>
-        <section
-          id="paper-position-panel"
-          class="data-panel paper-position-panel hidden"
-          aria-labelledby="paper-position-title"
-        >
-          <div class="section-heading">
-            <div>
-              <h2 id="paper-position-title">Paper simulation</h2>
-              <p>
-                This trade is simulated locally. It does not create an order or
-                position in your Delta demo account.
+            </section>
+          </details>
+          <section
+            id="paper-position-panel"
+            class="data-panel paper-position-panel hidden"
+            aria-labelledby="paper-position-title"
+          >
+            <div class="section-heading">
+              <div>
+                <h2 id="paper-position-title">Paper simulation</h2>
+                <p>
+                  This trade is simulated locally. It does not create an order
+                  or position in your Delta demo account.
+                </p>
+              </div>
+              <span id="paper-position-status" class="pill muted"></span>
+            </div>
+            <div
+              class="table-scroll"
+              tabindex="0"
+              aria-label="Simulated paper position table"
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th>Market</th>
+                    <th>Direction</th>
+                    <th>Open contracts</th>
+                    <th>Entry</th>
+                    <th>Stop loss</th>
+                    <th>Next target</th>
+                  </tr>
+                </thead>
+                <tbody id="account-paper-position"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="bottom-grid">
+            <div class="ladder-panel">
+              <div class="section-heading">
+                <div>
+                  <h2>The stop follows the trade</h2>
+                  <p>Your profit-protection ladder, for longs and shorts.</p>
+                </div>
+                <span class="pill neutral">AUTOMATIC</span>
+              </div>
+              <div class="ladder">
+                <div class="ladder-step" id="ladder-0">
+                  <span class="step-number">01</span
+                  ><span class="step-text"
+                    ><strong>Entry confirmed</strong
+                    ><small id="ladder-initial">SL at 2 × ATR</small></span
+                  ><span class="step-check">○</span>
+                </div>
+                <span class="ladder-arrow">→</span>
+                <div class="ladder-step" id="ladder-1">
+                  <span class="step-number">02</span
+                  ><span class="step-text"
+                    ><strong>TP1 reached</strong
+                    ><small>SL → Entry price</small></span
+                  ><span class="step-check">○</span>
+                </div>
+                <span class="ladder-arrow">→</span>
+                <div class="ladder-step" id="ladder-2">
+                  <span class="step-number">03</span
+                  ><span class="step-text"
+                    ><strong>TP2 reached</strong
+                    ><small>SL → TP1 price</small></span
+                  ><span class="step-check">○</span>
+                </div>
+                <span class="ladder-arrow">→</span>
+                <div class="ladder-step" id="ladder-3">
+                  <span class="step-number">04</span
+                  ><span class="step-text"
+                    ><strong>TP3 reached</strong
+                    ><small>Close remainder</small></span
+                  ><span class="step-check">○</span>
+                </div>
+              </div>
+              <p class="fine-print">
+                A stop at entry excludes fees and slippage. Demo stop updates
+                are sent to Delta after a confirmed partial fill; targets are
+                monitored while the runner is active.
               </p>
             </div>
-            <span id="paper-position-status" class="pill muted"></span>
+            <div class="activity-panel" id="activity">
+              <div class="section-heading">
+                <div>
+                  <h2>Recent activity</h2>
+                  <p>Every decision leaves a trace.</p>
+                </div>
+                <span class="activity-count" id="event-count">0</span>
+              </div>
+              <div id="events" class="event-list">
+                <p class="empty-activity">Your first event will appear here.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+        <section
+          id="account-view"
+          class="hidden page-view"
+          aria-labelledby="account-title"
+        >
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow">YOUR DELTA DEMO ACCOUNT</div>
+              <h1 id="account-title">
+                Funds & holdings<span class="title-dot">.</span>
+              </h1>
+              <p>
+                Wallet balances and positions directly from your demo account.
+              </p>
+            </div>
+            <div class="heading-actions">
+              <button class="secondary" id="account-connect">
+                Connection settings</button
+              ><button class="primary" id="account-refresh">
+                Refresh account ↻
+              </button>
+            </div>
           </div>
           <div
-            class="table-scroll"
-            tabindex="0"
-            aria-label="Simulated paper position table"
+            id="account-notice"
+            class="notice"
+            role="status"
+            aria-live="polite"
           >
-            <table>
-              <thead>
-                <tr>
-                  <th>Market</th>
-                  <th>Direction</th>
-                  <th>Open contracts</th>
-                  <th>Entry</th>
-                  <th>Stop loss</th>
-                  <th>Next target</th>
-                </tr>
-              </thead>
-              <tbody id="account-paper-position"></tbody>
-            </table>
+            Connect your demo account to fetch balances.
           </div>
-        </section>
-        <section class="bottom-grid">
-          <div class="ladder-panel">
-            <div class="section-heading">
-              <div>
-                <h2>The stop follows the trade</h2>
-                <p>Your profit-protection ladder, for longs and shorts.</p>
-              </div>
-              <span class="pill neutral">AUTOMATIC</span>
+          <aside
+            id="account-mode-context"
+            class="notice paper-mode-context hidden"
+            aria-labelledby="account-mode-title"
+          >
+            <div>
+              <strong id="account-mode-title">Paper mode selected</strong>
+              <p>
+                Paper trades run locally and appear in Automation. Connecting an
+                account does not switch the bot to demo order execution.
+              </p>
             </div>
-            <div class="ladder">
-              <div class="ladder-step" id="ladder-0">
-                <span class="step-number">01</span
-                ><span class="step-text"
-                  ><strong>Entry confirmed</strong
-                  ><small id="ladder-initial">SL at 2 × ATR</small></span
-                ><span class="step-check">○</span>
-              </div>
-              <span class="ladder-arrow">→</span>
-              <div class="ladder-step" id="ladder-1">
-                <span class="step-number">02</span
-                ><span class="step-text"
-                  ><strong>TP1 reached</strong
-                  ><small>SL → Entry price</small></span
-                ><span class="step-check">○</span>
-              </div>
-              <span class="ladder-arrow">→</span>
-              <div class="ladder-step" id="ladder-2">
-                <span class="step-number">03</span
-                ><span class="step-text"
-                  ><strong>TP2 reached</strong
-                  ><small>SL → TP1 price</small></span
-                ><span class="step-check">○</span>
-              </div>
-              <span class="ladder-arrow">→</span>
-              <div class="ladder-step" id="ladder-3">
-                <span class="step-number">04</span
-                ><span class="step-text"
-                  ><strong>TP3 reached</strong
-                  ><small>Close remainder</small></span
-                ><span class="step-check">○</span>
-              </div>
-            </div>
-            <p class="fine-print">
-              A stop at entry excludes fees and slippage. Demo stop updates are
-              sent to Delta after a confirmed partial fill; targets are
-              monitored while the runner is active.
-            </p>
-          </div>
-          <div class="activity-panel" id="activity">
-            <div class="section-heading">
-              <div>
-                <h2>Recent activity</h2>
-                <p>Every decision leaves a trace.</p>
-              </div>
-              <span class="activity-count" id="event-count">0</span>
-            </div>
-            <div id="events" class="event-list">
-              <p class="empty-activity">Your first event will appear here.</p>
-            </div>
-          </div>
-        </section>
-      </div>
-      <section
-        id="account-view"
-        class="hidden page-view"
-        aria-labelledby="account-title"
-      >
-        <div class="page-heading">
-          <div>
-            <div class="eyebrow">YOUR DELTA DEMO ACCOUNT</div>
-            <h1 id="account-title">
-              Funds & holdings<span class="title-dot">.</span>
-            </h1>
-            <p>
-              Wallet balances and positions directly from your demo account.
-            </p>
-          </div>
-          <div class="heading-actions">
-            <button class="secondary" id="account-connect">
-              Connection settings</button
-            ><button class="primary" id="account-refresh">
-              Refresh account ↻
+            <button id="account-view-paper" type="button" class="secondary">
+              View paper simulation →
             </button>
+          </aside>
+          <div class="account-toolbar">
+            <span id="account-identity">Delta India · Demo</span
+            ><label class="asset-picker"
+              >Display asset
+              <select id="account-asset" aria-label="Account display asset">
+                <option value="">—</option>
+              </select></label
+            ><span id="account-updated">Waiting for connection</span>
           </div>
-        </div>
-        <div
-          id="account-notice"
-          class="notice"
-          role="status"
-          aria-live="polite"
-        >
-          Connect your demo account to fetch balances.
-        </div>
-        <aside
-          id="account-mode-context"
-          class="notice paper-mode-context hidden"
-          aria-labelledby="account-mode-title"
-        >
-          <div>
-            <strong id="account-mode-title">Paper mode selected</strong>
-            <p>
-              Paper trades run locally and appear in Automation. Connecting an
-              account does not switch the bot to demo order execution.
-            </p>
-          </div>
-          <button id="account-view-paper" type="button" class="secondary">
-            View paper simulation →
-          </button>
-        </aside>
-        <div class="account-toolbar">
-          <span id="account-identity">Delta India · Demo</span
-          ><label class="asset-picker"
-            >Display asset
-            <select id="account-asset" aria-label="Account display asset">
-              <option value="">—</option>
-            </select></label
-          ><span id="account-updated">Waiting for connection</span>
-        </div>
-        <section
-          class="stats account-stats"
-          aria-label="Exchange wallet metrics"
-        >
-          <article>
-            <span>Wallet balance</span><strong id="account-balance">—</strong>
-            <p>Total held in selected asset</p>
-          </article>
-          <article>
-            <span>Available funds</span
-            ><strong id="account-available">—</strong>
-            <p>Reported available for trading</p>
-          </article>
-          <article>
-            <span>Blocked margin</span><strong id="account-blocked">—</strong>
-            <p>Across margin modes, with fees</p>
-          </article>
-          <article>
-            <span>Unrealized P&amp;L</span
-            ><strong id="account-unrealized">—</strong>
-            <p>Open positions in selected asset</p>
-          </article>
-        </section>
-        <section class="data-panel" aria-labelledby="holdings-title">
-          <div class="section-heading">
-            <div>
-              <h2 id="holdings-title">Wallet holdings</h2>
-              <p>
-                Each asset keeps its own units. Balances are never added across
-                currencies.
-              </p>
-            </div>
-            <span id="balances-freshness" class="data-freshness"
-              >Not fetched</span
-            >
-          </div>
-          <div
-            class="table-scroll"
-            tabindex="0"
-            aria-label="Wallet holdings table"
+          <section
+            class="stats account-stats"
+            aria-label="Exchange wallet metrics"
           >
-            <table>
-              <thead>
-                <tr>
-                  <th>Asset</th>
-                  <th>Balance</th>
-                  <th>Available</th>
-                  <th>Blocked margin</th>
-                  <th>Position margin · isolated</th>
-                  <th>Order margin · isolated</th>
-                  <th>Position margin · cross</th>
-                  <th>Order margin · cross</th>
-                  <th>Portfolio margin</th>
-                </tr>
-              </thead>
-              <tbody id="account-balances"></tbody>
-            </table>
-          </div>
-        </section>
-        <section class="data-panel" aria-labelledby="positions-title">
-          <div class="section-heading">
-            <div>
-              <h2 id="positions-title">
-                Demo exchange positions
-                <span id="positions-count" class="position-count">—</span>
-              </h2>
-              <p>
-                All products in your demo account, including trades placed
-                outside this bot.
-              </p>
-            </div>
-            <span id="positions-freshness" class="data-freshness"
-              >Not fetched</span
-            >
-          </div>
-          <div
-            class="table-scroll"
-            tabindex="0"
-            aria-label="Open positions table"
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th>Market</th>
-                  <th>Direction</th>
-                  <th>Contracts</th>
-                  <th>Entry</th>
-                  <th>Mark</th>
-                  <th>Margin</th>
-                  <th>Unrealized P&amp;L</th>
-                  <th>Liquidation price</th>
-                  <th>Margin mode</th>
-                </tr>
-              </thead>
-              <tbody id="account-positions"></tbody>
-            </table>
-          </div>
-        </section>
-        <div class="account-tables">
-          <section class="data-panel" aria-labelledby="orders-title">
+            <article>
+              <span>Wallet balance</span><strong id="account-balance">—</strong>
+              <p>Total held in selected asset</p>
+            </article>
+            <article>
+              <span>Available funds</span
+              ><strong id="account-available">—</strong>
+              <p>Reported available for trading</p>
+            </article>
+            <article>
+              <span>Blocked margin</span><strong id="account-blocked">—</strong>
+              <p>Across margin modes, with fees</p>
+            </article>
+            <article>
+              <span>Unrealized P&amp;L</span
+              ><strong id="account-unrealized">—</strong>
+              <p>Open positions in selected asset</p>
+            </article>
+          </section>
+          <section class="data-panel" aria-labelledby="holdings-title">
             <div class="section-heading">
               <div>
-                <h2 id="orders-title">Open & pending orders</h2>
-                <p id="orders-count">Across your demo account</p>
+                <h2 id="holdings-title">Wallet holdings</h2>
+                <p>
+                  Each asset keeps its own units. Balances are never added
+                  across currencies.
+                </p>
               </div>
-              <span id="orders-freshness" class="data-freshness"
+              <span id="balances-freshness" class="data-freshness"
                 >Not fetched</span
               >
             </div>
             <div
               class="table-scroll"
               tabindex="0"
-              aria-label="Pending orders table"
+              aria-label="Wallet holdings table"
             >
               <table>
                 <thead>
                   <tr>
-                    <th>Market / ID</th>
-                    <th>Side / type</th>
-                    <th>Remaining</th>
-                    <th>Limit / trigger</th>
-                    <th>Status</th>
+                    <th>Asset</th>
+                    <th>Balance</th>
+                    <th>Available</th>
+                    <th>Blocked margin</th>
+                    <th>Position margin · isolated</th>
+                    <th>Order margin · isolated</th>
+                    <th>Position margin · cross</th>
+                    <th>Order margin · cross</th>
+                    <th>Portfolio margin</th>
                   </tr>
                 </thead>
-                <tbody id="account-orders"></tbody>
+                <tbody id="account-balances"></tbody>
               </table>
             </div>
           </section>
-          <section class="data-panel" aria-labelledby="fills-title">
+          <section class="data-panel" aria-labelledby="positions-title">
             <div class="section-heading">
               <div>
-                <h2 id="fills-title">Recent fills</h2>
-                <p>Latest 50 exchange fills · not simulated trades</p>
+                <h2 id="positions-title">
+                  Demo exchange positions
+                  <span id="positions-count" class="position-count">—</span>
+                </h2>
+                <p>
+                  All products in your demo account, including trades placed
+                  outside this bot.
+                </p>
               </div>
-              <span id="fills-freshness" class="data-freshness"
+              <span id="positions-freshness" class="data-freshness"
                 >Not fetched</span
               >
             </div>
             <div
               class="table-scroll"
               tabindex="0"
-              aria-label="Recent fills table"
+              aria-label="Open positions table"
             >
               <table>
                 <thead>
                   <tr>
-                    <th>Market / time</th>
-                    <th>Side</th>
-                    <th>Quantity</th>
-                    <th>Fill price</th>
-                    <th>Fee</th>
+                    <th>Market</th>
+                    <th>Direction</th>
+                    <th>Contracts</th>
+                    <th>Entry</th>
+                    <th>Mark</th>
+                    <th>Margin</th>
+                    <th>Unrealized P&amp;L</th>
+                    <th>Liquidation price</th>
+                    <th>Margin mode</th>
                   </tr>
                 </thead>
-                <tbody id="account-fills"></tbody>
+                <tbody id="account-positions"></tbody>
               </table>
             </div>
           </section>
-        </div>
-      </section>
-      <section
-        id="backtest-view"
-        class="hidden page-view"
-        aria-labelledby="backtest-title"
-      >
-        <div class="page-heading bt-page-heading">
-          <div>
-            <div class="eyebrow">STRATEGY LAB</div>
-            <h1 id="backtest-title">
-              Backtesting<span class="title-dot">.</span>
-            </h1>
-            <p>Explore how your strategy performed over time.</p>
+          <div class="account-tables">
+            <section class="data-panel" aria-labelledby="orders-title">
+              <div class="section-heading">
+                <div>
+                  <h2 id="orders-title">Open & pending orders</h2>
+                  <p id="orders-count">Across your demo account</p>
+                </div>
+                <span id="orders-freshness" class="data-freshness"
+                  >Not fetched</span
+                >
+              </div>
+              <div
+                class="table-scroll"
+                tabindex="0"
+                aria-label="Pending orders table"
+              >
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Market / ID</th>
+                      <th>Side / type</th>
+                      <th>Remaining</th>
+                      <th>Limit / trigger</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="account-orders"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="data-panel" aria-labelledby="fills-title">
+              <div class="section-heading">
+                <div>
+                  <h2 id="fills-title">Recent fills</h2>
+                  <p>Latest 50 exchange fills · not simulated trades</p>
+                </div>
+                <span id="fills-freshness" class="data-freshness"
+                  >Not fetched</span
+                >
+              </div>
+              <div
+                class="table-scroll"
+                tabindex="0"
+                aria-label="Recent fills table"
+              >
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Market / time</th>
+                      <th>Side</th>
+                      <th>Quantity</th>
+                      <th>Fill price</th>
+                      <th>Fee</th>
+                    </tr>
+                  </thead>
+                  <tbody id="account-fills"></tbody>
+                </table>
+              </div>
+            </section>
           </div>
-          <div class="bt-page-actions">
-            <span class="bt-free-label"
-              ><span class="dot"></span> Local &amp; free</span
-            ><button id="backtest-export" class="secondary" disabled>
-              JSON results ↓</button
-            ><button id="research-report" class="secondary" disabled>
-              HTML report ↓</button
-            ><button id="research-inputs" class="secondary" disabled>
-              Replay inputs ↓</button
-            ><button id="research-quantstats" class="secondary hidden" disabled>
-              QuantStats ↓
-            </button>
-          </div>
-        </div>
-        <form id="backtest-form" class="data-panel backtest-controls">
-          <div class="bt-config-heading">
+        </section>
+        <section
+          id="backtest-view"
+          class="hidden page-view"
+          aria-labelledby="backtest-title"
+        >
+          <div class="page-heading bt-page-heading">
             <div>
-              <h2>Set up your test</h2>
-              <p>Choose a market, strategy, and date range.</p>
+              <div class="eyebrow">STRATEGY LAB</div>
+              <h1 id="backtest-title">
+                Backtesting<span class="title-dot">.</span>
+              </h1>
+              <p>Explore how your strategy performed over time.</p>
             </div>
-            <button type="button" id="backtest-settings-open" class="secondary">
-              Strategy settings <span aria-hidden="true">↗</span>
-            </button>
-          </div>
-          <div class="research-setup-grid">
-            <label class="field"
-              >Test type<select id="research-mode">
-                <option value="single">Single backtest</option>
-                <option value="multi_coin">Compare coins</option>
-                <option value="parameters">Compare parameters</option>
-                <option value="walk_forward">Walk-forward validation</option>
-              </select></label
-            >
-            <label class="field"
-              >Historical cache<select id="research-cache">
-                <option value="use">Reuse saved candles</option>
-                <option value="refresh">Download fresh candles</option>
-                <option value="off">Bypass cache</option>
-              </select></label
-            >
-            <label class="field"
-              >Signal consistency check<select id="research-lookahead">
-                <option value="16">16 checkpoints + trade signals</option>
-                <option value="32">32 checkpoints + trade signals</option>
-                <option value="64">64 checkpoints + trade signals</option>
-                <option value="0">Disabled</option>
-              </select></label
-            >
-          </div>
-          <p id="research-mode-help" class="form-note">
-            Replay one strategy with its saved settings and inspect every trade.
-          </p>
-          <div id="backtest-market-inputs" class="bt-market-grid"></div>
-          <div class="strategy-recipe-row">
-            <p id="backtest-strategy-description" class="form-note"></p>
-            <button
-              type="button"
-              id="backtest-strategy-preset"
-              class="secondary"
-            >
-              Load strategy preset
-            </button>
-          </div>
-          <div id="research-coin-options" class="research-options hidden">
-            <label class="field"
-              >Markets to compare
-              <input
-                id="research-symbols"
-                value="BTCUSD, ETHUSD"
-                autocomplete="off"
-                aria-describedby="research-symbols-help"
-              />
-            </label>
-            <p id="research-symbols-help" class="form-note">
-              Enter up to 12 Delta perpetual symbols, separated by commas. Each
-              market gets the same capital and contract count; exposure varies
-              by contract value.
-            </p>
-          </div>
-          <div id="research-grid-options" class="research-options hidden">
-            <div class="research-axis-grid">
-              <label class="field"
-                >First parameter<select id="research-axis-x"></select
-              ></label>
-              <label class="field"
-                >Values, separated by commas
-                <input
-                  id="research-values-x"
-                  value="7, 9, 12"
-                  autocomplete="off"
-                />
-              </label>
-              <label class="field"
-                >Second parameter<select id="research-axis-y"></select
-              ></label>
-              <label class="field"
-                >Values, separated by commas
-                <input
-                  id="research-values-y"
-                  value="1.5, 2, 2.5"
-                  autocomplete="off"
-                />
-              </label>
+            <div class="bt-page-actions">
+              <span class="bt-free-label"
+                ><span class="dot"></span> Local &amp; free</span
+              ><button id="backtest-export" class="secondary" disabled>
+                JSON results ↓</button
+              ><button id="research-report" class="secondary" disabled>
+                HTML report ↓</button
+              ><button id="research-inputs" class="secondary" disabled>
+                Replay inputs ↓</button
+              ><button
+                id="research-quantstats"
+                class="secondary hidden"
+                disabled
+              >
+                QuantStats ↓
+              </button>
             </div>
-            <p class="form-note">
-              Up to 24 combinations. Invalid settings are listed separately.
-              Comparison rankings describe the selected historical period.
-            </p>
           </div>
-          <div id="research-validation-options" class="research-options hidden">
+          <form id="backtest-form" class="data-panel backtest-controls">
+            <div class="bt-config-heading">
+              <div>
+                <h2>Set up your test</h2>
+                <p>Choose a market, strategy, and date range.</p>
+              </div>
+              <button
+                type="button"
+                id="backtest-settings-open"
+                class="secondary"
+              >
+                Strategy settings <span aria-hidden="true">↗</span>
+              </button>
+            </div>
             <div class="research-setup-grid">
               <label class="field"
-                >Ranking metric<select id="research-objective">
-                  <option value="return">Net return after fees</option>
-                  <option value="sharpe">Daily Sharpe</option>
-                  <option value="sortino">Daily Sortino</option>
-                  <option value="calmar">Calmar</option>
+                >Test type<select id="research-mode">
+                  <option value="single">Single backtest</option>
+                  <option value="multi_coin">Compare coins</option>
+                  <option value="parameters">Compare parameters</option>
+                  <option value="walk_forward">Walk-forward validation</option>
                 </select></label
               >
               <label class="field"
-                >Minimum closed trades<input
-                  id="research-min-trades"
-                  type="number"
-                  min="0"
-                  max="10000"
-                  step="1"
-                  value="1"
-              /></label>
-            </div>
-            <div id="research-walk-options" class="research-setup-grid hidden">
-              <label class="field"
-                >Initial training portion (%)<input
-                  id="research-train"
-                  type="number"
-                  min="20"
-                  max="80"
-                  step="1"
-                  value="60"
-              /></label>
-              <label class="field"
-                >Untouched test folds<input
-                  id="research-folds"
-                  type="number"
-                  min="2"
-                  max="6"
-                  step="1"
-                  value="3"
-              /></label>
-            </div>
-          </div>
-          <div class="bt-period-heading">
-            <span>Test period <small>Dates use your local time</small></span>
-            <div class="range-presets" aria-label="Backtest date presets">
-              <button type="button" data-days="7" aria-pressed="true">
-                7 days</button
-              ><button type="button" data-days="30" aria-pressed="false">
-                1 month</button
-              ><button type="button" data-days="90" aria-pressed="false">
-                3 months</button
-              ><button type="button" data-days="180" aria-pressed="false">
-                6 months</button
-              ><button type="button" data-days="365" aria-pressed="false">
-                1 year
-              </button>
-            </div>
-          </div>
-          <div class="bt-period-grid">
-            <label class="field"
-              >From<input id="backtest-start" type="datetime-local" required
-            /></label>
-            <label class="field"
-              >To<input id="backtest-end" type="datetime-local" required
-            /></label>
-            <label class="field"
-              >Market data<select id="backtest-source">
-                <option value="india_public">Delta India public market</option>
-                <option value="demo">Delta demo market</option>
-              </select></label
-            >
-            <label class="field"
-              >Starting capital (quote asset)<input
-                id="backtest-balance"
-                type="number"
-                min="1"
-                max="1000000000"
-                step="0.01"
-                value="10000"
-                required
-            /></label>
-          </div>
-          <div class="bt-config-footer">
-            <div>
-              <p id="backtest-config-summary" class="bt-config-summary">
-                EMA 9 / 21 · CMO 14 · ATR 14
-              </p>
-              <p
-                id="backtest-status"
-                class="bt-status"
-                role="status"
-                aria-live="polite"
+                >Historical cache<select id="research-cache">
+                  <option value="use">Reuse saved candles</option>
+                  <option value="refresh">Download fresh candles</option>
+                  <option value="off">Bypass cache</option>
+                </select></label
               >
-                Ready to run. Up to one year of free historical data.
-              </p>
+              <label class="field"
+                >Signal consistency check<select id="research-lookahead">
+                  <option value="16">16 checkpoints + trade signals</option>
+                  <option value="32">32 checkpoints + trade signals</option>
+                  <option value="64">64 checkpoints + trade signals</option>
+                  <option value="0">Disabled</option>
+                </select></label
+              >
             </div>
-            <div class="research-run-actions">
+            <p id="research-mode-help" class="form-note">
+              Replay one strategy with its saved settings and inspect every
+              trade.
+            </p>
+            <div id="backtest-market-inputs" class="bt-market-grid"></div>
+            <div class="strategy-recipe-row">
+              <p id="backtest-strategy-description" class="form-note"></p>
               <button
                 type="button"
-                id="research-cancel"
-                class="secondary hidden"
+                id="backtest-strategy-preset"
+                class="secondary"
               >
-                Cancel research
-              </button>
-              <button type="submit" id="backtest-run" class="primary">
-                Run backtest <span aria-hidden="true">▶</span>
+                Load strategy preset
               </button>
             </div>
+            <div id="research-coin-options" class="research-options hidden">
+              <label class="field"
+                >Markets to compare
+                <input
+                  id="research-symbols"
+                  value="BTCUSD, ETHUSD"
+                  autocomplete="off"
+                  aria-describedby="research-symbols-help"
+                />
+              </label>
+              <p id="research-symbols-help" class="form-note">
+                Enter up to 12 Delta perpetual symbols, separated by commas.
+                Each market gets the same capital and contract count; exposure
+                varies by contract value.
+              </p>
+            </div>
+            <div id="research-grid-options" class="research-options hidden">
+              <div class="research-axis-grid">
+                <label class="field"
+                  >First parameter<select id="research-axis-x"></select
+                ></label>
+                <label class="field"
+                  >Values, separated by commas
+                  <input
+                    id="research-values-x"
+                    value="7, 9, 12"
+                    autocomplete="off"
+                  />
+                </label>
+                <label class="field"
+                  >Second parameter<select id="research-axis-y"></select
+                ></label>
+                <label class="field"
+                  >Values, separated by commas
+                  <input
+                    id="research-values-y"
+                    value="1.5, 2, 2.5"
+                    autocomplete="off"
+                  />
+                </label>
+              </div>
+              <p class="form-note">
+                Up to 24 combinations. Invalid settings are listed separately.
+                Comparison rankings describe the selected historical period.
+              </p>
+            </div>
+            <div
+              id="research-validation-options"
+              class="research-options hidden"
+            >
+              <div class="research-setup-grid">
+                <label class="field"
+                  >Ranking metric<select id="research-objective">
+                    <option value="return">Net return after fees</option>
+                    <option value="sharpe">Daily Sharpe</option>
+                    <option value="sortino">Daily Sortino</option>
+                    <option value="calmar">Calmar</option>
+                  </select></label
+                >
+                <label class="field"
+                  >Minimum closed trades<input
+                    id="research-min-trades"
+                    type="number"
+                    min="0"
+                    max="10000"
+                    step="1"
+                    value="1"
+                /></label>
+              </div>
+              <div
+                id="research-walk-options"
+                class="research-setup-grid hidden"
+              >
+                <label class="field"
+                  >Initial training portion (%)<input
+                    id="research-train"
+                    type="number"
+                    min="20"
+                    max="80"
+                    step="1"
+                    value="60"
+                /></label>
+                <label class="field"
+                  >Untouched test folds<input
+                    id="research-folds"
+                    type="number"
+                    min="2"
+                    max="6"
+                    step="1"
+                    value="3"
+                /></label>
+              </div>
+            </div>
+            <div class="bt-period-heading">
+              <span>Test period <small>Dates use your local time</small></span>
+              <div class="range-presets" aria-label="Backtest date presets">
+                <button type="button" data-days="7" aria-pressed="true">
+                  7 days</button
+                ><button type="button" data-days="30" aria-pressed="false">
+                  1 month</button
+                ><button type="button" data-days="90" aria-pressed="false">
+                  3 months</button
+                ><button type="button" data-days="180" aria-pressed="false">
+                  6 months</button
+                ><button type="button" data-days="365" aria-pressed="false">
+                  1 year
+                </button>
+              </div>
+            </div>
+            <div class="bt-period-grid">
+              <label class="field"
+                >From<input id="backtest-start" type="datetime-local" required
+              /></label>
+              <label class="field"
+                >To<input id="backtest-end" type="datetime-local" required
+              /></label>
+              <label class="field"
+                >Market data<select id="backtest-source">
+                  <option value="india_public">
+                    Delta India public market
+                  </option>
+                  <option value="demo">Delta demo market</option>
+                </select></label
+              >
+              <label class="field"
+                >Starting capital (quote asset)<input
+                  id="backtest-balance"
+                  type="number"
+                  min="1"
+                  max="1000000000"
+                  step="0.01"
+                  value="10000"
+                  required
+              /></label>
+            </div>
+            <div class="bt-config-footer">
+              <div>
+                <p id="backtest-config-summary" class="bt-config-summary">
+                  EMA 9 / 21 · CMO 14 · ATR 14
+                </p>
+                <p
+                  id="backtest-status"
+                  class="bt-status"
+                  role="status"
+                  aria-live="polite"
+                >
+                  Ready to run. Up to one year of free historical data.
+                </p>
+              </div>
+              <div class="research-run-actions">
+                <button
+                  type="button"
+                  id="research-cancel"
+                  class="secondary hidden"
+                >
+                  Cancel research
+                </button>
+                <button type="submit" id="backtest-run" class="primary">
+                  Run backtest <span aria-hidden="true">▶</span>
+                </button>
+              </div>
+            </div>
+            <dialog
+              id="backtest-settings-dialog"
+              class="bt-settings-dialog"
+              aria-labelledby="backtest-settings-title"
+            >
+              <div class="dialog-heading">
+                <div>
+                  <div class="eyebrow">TEST PARAMETERS</div>
+                  <h2 id="backtest-settings-title">Strategy settings</h2>
+                </div>
+                <button
+                  type="button"
+                  id="backtest-settings-close"
+                  class="icon-button"
+                  aria-label="Close backtest settings"
+                >
+                  ×
+                </button>
+              </div>
+              <div
+                class="dialog-tabs bt-settings-tabs"
+                role="tablist"
+                aria-label="Backtest settings"
+              >
+                <button
+                  type="button"
+                  id="bt-settings-signals"
+                  data-bt-settings="strategy"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="bt-settings-strategy-panel"
+                >
+                  Signals</button
+                ><button
+                  type="button"
+                  id="bt-settings-risk"
+                  data-bt-settings="risk"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="bt-settings-risk-panel"
+                >
+                  Risk &amp; targets</button
+                ><button
+                  type="button"
+                  id="bt-settings-costs"
+                  data-bt-settings="costs"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="bt-settings-costs-panel"
+                >
+                  Trading costs
+                </button>
+              </div>
+              <section
+                id="bt-settings-strategy-panel"
+                class="bt-settings-panel"
+                data-bt-settings-panel="strategy"
+                role="tabpanel"
+                aria-labelledby="bt-settings-signals"
+              >
+                <p class="form-note">
+                  Fine-tune the indicators used for entries and the
+                  higher-timeframe filter.
+                </p>
+                <div id="backtest-strategy-inputs" class="form-grid"></div>
+              </section>
+              <section
+                id="bt-settings-risk-panel"
+                class="bt-settings-panel hidden"
+                data-bt-settings-panel="risk"
+                role="tabpanel"
+                aria-labelledby="bt-settings-risk"
+              >
+                <p class="form-note">
+                  TP1 moves the stop to entry. TP2 moves it to TP1. TP3 closes
+                  the remainder.
+                </p>
+                <div id="backtest-risk-inputs" class="form-grid"></div>
+                <p
+                  id="backtest-risk-preview"
+                  class="ratio-note"
+                  aria-live="polite"
+                ></p>
+              </section>
+              <section
+                id="bt-settings-costs-panel"
+                class="bt-settings-panel hidden"
+                data-bt-settings-panel="costs"
+                role="tabpanel"
+                aria-labelledby="bt-settings-costs"
+              >
+                <p class="form-note">
+                  Market orders use the taker fee on every fill. One basis point
+                  equals 0.01%. Half the spread is charged on each side.
+                </p>
+                <div class="form-grid">
+                  <label class="field"
+                    >Fee per fill (bps)<input
+                      id="backtest-fee"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value="5"
+                      required /></label
+                  ><label class="field"
+                    >Slippage per fill (bps)<input
+                      id="backtest-slippage"
+                      type="number"
+                      min="0"
+                      max="500"
+                      step="0.1"
+                      value="2"
+                      required
+                  /></label>
+                  <label class="field"
+                    >Bid–ask spread (bps)<input
+                      id="backtest-spread"
+                      type="number"
+                      min="0"
+                      max="500"
+                      step="0.1"
+                      value="0"
+                      required
+                  /></label>
+                  <label class="field"
+                    >Cost sensitivity<select id="backtest-stress">
+                      <option value="5,10,20">5 / 10 / 20 bps slippage</option>
+                      <option value="10,20,50">
+                        10 / 20 / 50 bps slippage
+                      </option>
+                      <option value="">Baseline only</option>
+                    </select></label
+                  >
+                </div>
+                <p class="form-note">
+                  Sensitivity reruns the selected rules on the same data.
+                  Scenarios above your entry execution limit are skipped.
+                  Funding and order-book liquidity are not simulated.
+                </p>
+              </section>
+              <p
+                id="backtest-settings-error"
+                class="form-error"
+                role="alert"
+              ></p>
+              <div class="dialog-footer">
+                <button type="button" id="backtest-copy" class="secondary">
+                  Copy runner settings</button
+                ><button
+                  type="button"
+                  id="backtest-settings-done"
+                  class="primary"
+                >
+                  Done
+                </button>
+              </div>
+            </dialog>
+          </form>
+          <div id="backtest-empty" class="data-panel bt-empty">
+            <span class="bt-empty-icon" aria-hidden="true">⌁</span>
+            <div>
+              <h2 id="backtest-empty-title">Your results will appear here</h2>
+              <p id="backtest-empty-copy">
+                Run a test to see the equity curve, performance, and individual
+                trades.
+              </p>
+            </div>
+          </div>
+          <section
+            id="research-study"
+            class="data-panel hidden"
+            aria-labelledby="research-study-title"
+          >
+            <div class="section-heading">
+              <div>
+                <h2 id="research-study-title">Research results</h2>
+                <p id="research-study-method"></p>
+              </div>
+              <span id="research-study-count" role="status"></span>
+            </div>
+            <button
+              type="button"
+              id="research-combined"
+              class="secondary hidden"
+            >
+              View combined out-of-sample result
+            </button>
+            <div
+              class="table-scroll"
+              tabindex="0"
+              aria-label="Research comparison results"
+            >
+              <table>
+                <thead>
+                  <tr>
+                    <th>Run</th>
+                    <th>Status</th>
+                    <th>Net return</th>
+                    <th>Drawdown</th>
+                    <th>Trades</th>
+                    <th>Training return</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="research-study-rows"></tbody>
+              </table>
+            </div>
+            <div id="research-parameter-map" class="hidden">
+              <h3>Parameter returns</h3>
+              <p class="form-note">
+                Each cell shows the historical return for that parameter
+                combination. This is an in-sample comparison.
+              </p>
+              <div
+                id="research-heatmap"
+                class="table-scroll"
+                tabindex="0"
+                aria-label="Parameter return heatmap"
+              ></div>
+            </div>
+          </section>
+          <div id="backtest-results" class="hidden">
+            <div class="bt-result-heading">
+              <div>
+                <h2 id="bt-result-title">Backtest results</h2>
+                <p id="bt-period"></p>
+              </div>
+              <span id="bt-result-source" class="bt-source-label"></span>
+            </div>
+            <section
+              class="stats backtest-stats"
+              aria-label="Backtest performance"
+            >
+              <article>
+                <span>Net P&amp;L</span><strong id="bt-pnl">—</strong>
+                <p id="bt-return">After trading fees</p>
+              </article>
+              <article>
+                <span>Closed trades</span><strong id="bt-trades">—</strong>
+                <p id="bt-wins">Win rate</p>
+              </article>
+              <article>
+                <span>Maximum drawdown</span><strong id="bt-drawdown">—</strong>
+                <p>At candle closes</p>
+              </article>
+              <article>
+                <span>Fees paid</span><strong id="bt-fees">—</strong>
+                <p id="bt-factor">Profit factor</p>
+              </article>
+            </section>
+            <div
+              class="bt-result-tabs"
+              role="tablist"
+              aria-label="Backtest results"
+            >
+              <button
+                type="button"
+                id="bt-tab-overview"
+                data-bt-result="overview"
+                role="tab"
+                aria-selected="true"
+                aria-controls="bt-overview-panel"
+              >
+                Overview</button
+              ><button
+                type="button"
+                id="bt-tab-trades"
+                data-bt-result="trades"
+                role="tab"
+                aria-selected="false"
+                aria-controls="bt-trade-panel"
+              >
+                Trades <span id="bt-trade-badge">0</span></button
+              ><button
+                type="button"
+                id="bt-tab-methodology"
+                data-bt-result="methodology"
+                role="tab"
+                aria-selected="false"
+                aria-controls="bt-methodology-panel"
+              >
+                Methodology
+              </button>
+            </div>
+            <section
+              id="bt-overview-panel"
+              class="data-panel bt-equity-panel"
+              role="tabpanel"
+              aria-labelledby="bt-tab-overview"
+            >
+              <div class="section-heading">
+                <div>
+                  <h2>Equity curve</h2>
+                  <p>Account value through the historical replay.</p>
+                </div>
+                <span id="bt-ending" class="equity-ending">—</span>
+              </div>
+              <svg
+                id="equity-chart"
+                viewBox="0 0 800 320"
+                role="img"
+                aria-label="Backtest equity curve"
+              ></svg>
+              <div class="bt-chart-caption">
+                <span
+                  ><i class="legend-dot green"></i> Equity after trading
+                  fees</span
+                ><span id="bt-chart-candles"></span>
+              </div>
+              <section
+                id="research-analytics"
+                class="hidden"
+                aria-labelledby="research-analytics-title"
+              >
+                <h3 id="research-analytics-title">Risk &amp; consistency</h3>
+                <dl id="research-metrics" class="research-metrics"></dl>
+                <p id="research-metric-method" class="form-note"></p>
+                <h3>Execution costs</h3>
+                <dl id="research-costs" class="research-metrics"></dl>
+                <p id="research-sample-note" class="form-note"></p>
+                <h3>Cost sensitivity</h3>
+                <p id="research-stress-note" class="form-note"></p>
+                <div
+                  id="research-stress-results"
+                  class="table-scroll"
+                  tabindex="0"
+                  aria-label="Cost sensitivity results"
+                ></div>
+                <h3>Monthly returns</h3>
+                <p class="form-note">
+                  UTC calendar months. An asterisk marks a partial month.
+                </p>
+                <div
+                  id="research-months"
+                  class="table-scroll"
+                  tabindex="0"
+                  aria-label="Monthly return heatmap"
+                ></div>
+              </section>
+            </section>
+            <section
+              id="bt-trade-panel"
+              class="data-panel hidden"
+              role="tabpanel"
+              aria-labelledby="bt-tab-trades"
+            >
+              <div class="section-heading">
+                <div>
+                  <h2>Trade history</h2>
+                  <p>Select a trade to inspect its exits and stop updates.</p>
+                </div>
+                <span id="bt-trade-count"></span>
+              </div>
+              <div
+                class="table-scroll"
+                tabindex="0"
+                aria-label="Backtest trades table"
+              >
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Entry time</th>
+                      <th>Direction</th>
+                      <th>Entry / initial stop</th>
+                      <th>Contracts</th>
+                      <th>Net P&amp;L</th>
+                      <th>Exit</th>
+                      <th><span class="sr-only">Trade detail</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="bt-trade-rows"></tbody>
+                </table>
+              </div>
+              <div class="table-pagination">
+                <button type="button" id="bt-prev" class="secondary">
+                  ← Previous</button
+                ><span id="bt-page"></span
+                ><button type="button" id="bt-next" class="secondary">
+                  Next →
+                </button>
+              </div>
+            </section>
+            <section
+              id="bt-methodology-panel"
+              class="hidden"
+              role="tabpanel"
+              aria-labelledby="bt-tab-methodology"
+            >
+              <div class="data-panel">
+                <div class="section-heading">
+                  <div>
+                    <h2>Data &amp; execution</h2>
+                    <p id="bt-coverage"></p>
+                  </div>
+                </div>
+                <ul id="bt-assumptions" class="assumption-list"></ul>
+                <p id="bt-rejections" class="form-note"></p>
+                <h3>Signal consistency</h3>
+                <div id="research-bias" class="notice"></div>
+                <h3>Historical data</h3>
+                <ul id="research-history" class="assumption-list"></ul>
+              </div>
+              <details class="data-panel bt-validation-details">
+                <summary>Validation checks</summary>
+                <p class="form-note">
+                  Statistics checks use this trade ledger. Backtrader checks
+                  controlled price paths. Backtesting.py replays the selected
+                  period with its broker and a project execution adapter.
+                  Strategy signals are shared. Expand each check for its
+                  coverage.
+                </p>
+                <p id="research-data-quality" class="form-note"></p>
+                <div id="bt-reference-checks"></div>
+              </details>
+            </section>
           </div>
           <dialog
-            id="backtest-settings-dialog"
-            class="bt-settings-dialog"
-            aria-labelledby="backtest-settings-title"
+            id="bt-trade-dialog"
+            class="bt-trade-dialog"
+            aria-labelledby="bt-trade-title"
           >
             <div class="dialog-heading">
               <div>
-                <div class="eyebrow">TEST PARAMETERS</div>
-                <h2 id="backtest-settings-title">Strategy settings</h2>
+                <div class="eyebrow">TRADE DETAIL</div>
+                <h2 id="bt-trade-title">Trade execution</h2>
               </div>
               <button
                 type="button"
-                id="backtest-settings-close"
+                id="bt-trade-close"
                 class="icon-button"
-                aria-label="Close backtest settings"
+                aria-label="Close trade detail"
               >
                 ×
               </button>
             </div>
-            <div
-              class="dialog-tabs bt-settings-tabs"
-              role="tablist"
-              aria-label="Backtest settings"
-            >
-              <button
-                type="button"
-                id="bt-settings-signals"
-                data-bt-settings="strategy"
-                role="tab"
-                aria-selected="true"
-                aria-controls="bt-settings-strategy-panel"
-              >
-                Signals</button
-              ><button
-                type="button"
-                id="bt-settings-risk"
-                data-bt-settings="risk"
-                role="tab"
-                aria-selected="false"
-                aria-controls="bt-settings-risk-panel"
-              >
-                Risk &amp; targets</button
-              ><button
-                type="button"
-                id="bt-settings-costs"
-                data-bt-settings="costs"
-                role="tab"
-                aria-selected="false"
-                aria-controls="bt-settings-costs-panel"
-              >
-                Trading costs
-              </button>
-            </div>
-            <section
-              id="bt-settings-strategy-panel"
-              class="bt-settings-panel"
-              data-bt-settings-panel="strategy"
-              role="tabpanel"
-              aria-labelledby="bt-settings-signals"
-            >
-              <p class="form-note">
-                Fine-tune the indicators used for entries and the
-                higher-timeframe filter.
-              </p>
-              <div id="backtest-strategy-inputs" class="form-grid"></div>
-            </section>
-            <section
-              id="bt-settings-risk-panel"
-              class="bt-settings-panel hidden"
-              data-bt-settings-panel="risk"
-              role="tabpanel"
-              aria-labelledby="bt-settings-risk"
-            >
-              <p class="form-note">
-                TP1 moves the stop to entry. TP2 moves it to TP1. TP3 closes the
-                remainder.
-              </p>
-              <div id="backtest-risk-inputs" class="form-grid"></div>
-              <p
-                id="backtest-risk-preview"
-                class="ratio-note"
-                aria-live="polite"
-              ></p>
-            </section>
-            <section
-              id="bt-settings-costs-panel"
-              class="bt-settings-panel hidden"
-              data-bt-settings-panel="costs"
-              role="tabpanel"
-              aria-labelledby="bt-settings-costs"
-            >
-              <p class="form-note">
-                Market orders use the taker fee on every fill. One basis point
-                equals 0.01%. Half the spread is charged on each side.
-              </p>
-              <div class="form-grid">
-                <label class="field"
-                  >Fee per fill (bps)<input
-                    id="backtest-fee"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value="5"
-                    required /></label
-                ><label class="field"
-                  >Slippage per fill (bps)<input
-                    id="backtest-slippage"
-                    type="number"
-                    min="0"
-                    max="500"
-                    step="0.1"
-                    value="2"
-                    required
-                /></label>
-                <label class="field"
-                  >Bid–ask spread (bps)<input
-                    id="backtest-spread"
-                    type="number"
-                    min="0"
-                    max="500"
-                    step="0.1"
-                    value="0"
-                    required
-                /></label>
-                <label class="field"
-                  >Cost sensitivity<select id="backtest-stress">
-                    <option value="5,10,20">5 / 10 / 20 bps slippage</option>
-                    <option value="10,20,50">10 / 20 / 50 bps slippage</option>
-                    <option value="">Baseline only</option>
-                  </select></label
-                >
-              </div>
-              <p class="form-note">
-                Sensitivity reruns the selected rules on the same data.
-                Scenarios above your entry execution limit are skipped. Funding
-                and order-book liquidity are not simulated.
-              </p>
-            </section>
-            <p id="backtest-settings-error" class="form-error" role="alert"></p>
-            <div class="dialog-footer">
-              <button type="button" id="backtest-copy" class="secondary">
-                Copy runner settings</button
-              ><button
-                type="button"
-                id="backtest-settings-done"
-                class="primary"
-              >
-                Done
-              </button>
+            <div class="bt-trade-content">
+              <p id="bt-trade-dates" class="form-note"></p>
+              <dl id="bt-trade-summary" class="bt-trade-summary"></dl>
+              <h3>Execution timeline</h3>
+              <ol id="bt-trade-timeline" class="bt-trade-timeline"></ol>
             </div>
           </dialog>
-        </form>
-        <div id="backtest-empty" class="data-panel bt-empty">
-          <span class="bt-empty-icon" aria-hidden="true">⌁</span>
-          <div>
-            <h2 id="backtest-empty-title">Your results will appear here</h2>
-            <p id="backtest-empty-copy">
-              Run a test to see the equity curve, performance, and individual
-              trades.
-            </p>
-          </div>
-        </div>
-        <section
-          id="research-study"
-          class="data-panel hidden"
-          aria-labelledby="research-study-title"
-        >
-          <div class="section-heading">
-            <div>
-              <h2 id="research-study-title">Research results</h2>
-              <p id="research-study-method"></p>
-            </div>
-            <span id="research-study-count" role="status"></span>
-          </div>
-          <button type="button" id="research-combined" class="secondary hidden">
-            View combined out-of-sample result
-          </button>
-          <div
-            class="table-scroll"
-            tabindex="0"
-            aria-label="Research comparison results"
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th>Run</th>
-                  <th>Status</th>
-                  <th>Net return</th>
-                  <th>Drawdown</th>
-                  <th>Trades</th>
-                  <th>Training return</th>
-                  <th>Details</th>
-                </tr>
-              </thead>
-              <tbody id="research-study-rows"></tbody>
-            </table>
-          </div>
-          <div id="research-parameter-map" class="hidden">
-            <h3>Parameter returns</h3>
-            <p class="form-note">
-              Each cell shows the historical return for that parameter
-              combination. This is an in-sample comparison.
-            </p>
-            <div
-              id="research-heatmap"
-              class="table-scroll"
-              tabindex="0"
-              aria-label="Parameter return heatmap"
-            ></div>
-          </div>
         </section>
-        <div id="backtest-results" class="hidden">
-          <div class="bt-result-heading">
-            <div>
-              <h2 id="bt-result-title">Backtest results</h2>
-              <p id="bt-period"></p>
-            </div>
-            <span id="bt-result-source" class="bt-source-label"></span>
-          </div>
-          <section
-            class="stats backtest-stats"
-            aria-label="Backtest performance"
-          >
-            <article>
-              <span>Net P&amp;L</span><strong id="bt-pnl">—</strong>
-              <p id="bt-return">After trading fees</p>
-            </article>
-            <article>
-              <span>Closed trades</span><strong id="bt-trades">—</strong>
-              <p id="bt-wins">Win rate</p>
-            </article>
-            <article>
-              <span>Maximum drawdown</span><strong id="bt-drawdown">—</strong>
-              <p>At candle closes</p>
-            </article>
-            <article>
-              <span>Fees paid</span><strong id="bt-fees">—</strong>
-              <p id="bt-factor">Profit factor</p>
-            </article>
-          </section>
-          <div
-            class="bt-result-tabs"
-            role="tablist"
-            aria-label="Backtest results"
-          >
-            <button
-              type="button"
-              id="bt-tab-overview"
-              data-bt-result="overview"
-              role="tab"
-              aria-selected="true"
-              aria-controls="bt-overview-panel"
-            >
-              Overview</button
-            ><button
-              type="button"
-              id="bt-tab-trades"
-              data-bt-result="trades"
-              role="tab"
-              aria-selected="false"
-              aria-controls="bt-trade-panel"
-            >
-              Trades <span id="bt-trade-badge">0</span></button
-            ><button
-              type="button"
-              id="bt-tab-methodology"
-              data-bt-result="methodology"
-              role="tab"
-              aria-selected="false"
-              aria-controls="bt-methodology-panel"
-            >
-              Methodology
-            </button>
-          </div>
-          <section
-            id="bt-overview-panel"
-            class="data-panel bt-equity-panel"
-            role="tabpanel"
-            aria-labelledby="bt-tab-overview"
-          >
-            <div class="section-heading">
-              <div>
-                <h2>Equity curve</h2>
-                <p>Account value through the historical replay.</p>
-              </div>
-              <span id="bt-ending" class="equity-ending">—</span>
-            </div>
-            <svg
-              id="equity-chart"
-              viewBox="0 0 800 320"
-              role="img"
-              aria-label="Backtest equity curve"
-            ></svg>
-            <div class="bt-chart-caption">
-              <span
-                ><i class="legend-dot green"></i> Equity after trading
-                fees</span
-              ><span id="bt-chart-candles"></span>
-            </div>
-            <section
-              id="research-analytics"
-              class="hidden"
-              aria-labelledby="research-analytics-title"
-            >
-              <h3 id="research-analytics-title">Risk &amp; consistency</h3>
-              <dl id="research-metrics" class="research-metrics"></dl>
-              <p id="research-metric-method" class="form-note"></p>
-              <h3>Execution costs</h3>
-              <dl id="research-costs" class="research-metrics"></dl>
-              <p id="research-sample-note" class="form-note"></p>
-              <h3>Cost sensitivity</h3>
-              <p id="research-stress-note" class="form-note"></p>
-              <div
-                id="research-stress-results"
-                class="table-scroll"
-                tabindex="0"
-                aria-label="Cost sensitivity results"
-              ></div>
-              <h3>Monthly returns</h3>
-              <p class="form-note">
-                UTC calendar months. An asterisk marks a partial month.
-              </p>
-              <div
-                id="research-months"
-                class="table-scroll"
-                tabindex="0"
-                aria-label="Monthly return heatmap"
-              ></div>
-            </section>
-          </section>
-          <section
-            id="bt-trade-panel"
-            class="data-panel hidden"
-            role="tabpanel"
-            aria-labelledby="bt-tab-trades"
-          >
-            <div class="section-heading">
-              <div>
-                <h2>Trade history</h2>
-                <p>Select a trade to inspect its exits and stop updates.</p>
-              </div>
-              <span id="bt-trade-count"></span>
-            </div>
-            <div
-              class="table-scroll"
-              tabindex="0"
-              aria-label="Backtest trades table"
-            >
-              <table>
-                <thead>
-                  <tr>
-                    <th>Entry time</th>
-                    <th>Direction</th>
-                    <th>Entry / initial stop</th>
-                    <th>Contracts</th>
-                    <th>Net P&amp;L</th>
-                    <th>Exit</th>
-                    <th><span class="sr-only">Trade detail</span></th>
-                  </tr>
-                </thead>
-                <tbody id="bt-trade-rows"></tbody>
-              </table>
-            </div>
-            <div class="table-pagination">
-              <button type="button" id="bt-prev" class="secondary">
-                ← Previous</button
-              ><span id="bt-page"></span
-              ><button type="button" id="bt-next" class="secondary">
-                Next →
-              </button>
-            </div>
-          </section>
-          <section
-            id="bt-methodology-panel"
-            class="hidden"
-            role="tabpanel"
-            aria-labelledby="bt-tab-methodology"
-          >
-            <div class="data-panel">
-              <div class="section-heading">
-                <div>
-                  <h2>Data &amp; execution</h2>
-                  <p id="bt-coverage"></p>
-                </div>
-              </div>
-              <ul id="bt-assumptions" class="assumption-list"></ul>
-              <p id="bt-rejections" class="form-note"></p>
-              <h3>Signal consistency</h3>
-              <div id="research-bias" class="notice"></div>
-              <h3>Historical data</h3>
-              <ul id="research-history" class="assumption-list"></ul>
-            </div>
-            <details class="data-panel bt-validation-details">
-              <summary>Validation checks</summary>
-              <p class="form-note">
-                Statistics checks use this trade ledger. Backtrader checks
-                controlled price paths. Backtesting.py replays the selected
-                period with its broker and a project execution adapter. Strategy
-                signals are shared. Expand each check for its coverage.
-              </p>
-              <p id="research-data-quality" class="form-note"></p>
-              <div id="bt-reference-checks"></div>
-            </details>
-          </section>
-        </div>
-        <dialog
-          id="bt-trade-dialog"
-          class="bt-trade-dialog"
-          aria-labelledby="bt-trade-title"
-        >
-          <div class="dialog-heading">
-            <div>
-              <div class="eyebrow">TRADE DETAIL</div>
-              <h2 id="bt-trade-title">Trade execution</h2>
-            </div>
-            <button
-              type="button"
-              id="bt-trade-close"
-              class="icon-button"
-              aria-label="Close trade detail"
-            >
-              ×
-            </button>
-          </div>
-          <div class="bt-trade-content">
-            <p id="bt-trade-dates" class="form-note"></p>
-            <dl id="bt-trade-summary" class="bt-trade-summary"></dl>
-            <h3>Execution timeline</h3>
-            <ol id="bt-trade-timeline" class="bt-trade-timeline"></ol>
-          </div>
-        </dialog>
-      </section>
-      <footer>
-        <span><span class="dot"></span> Delta India demo only</span
-        ><span
-          >Your strategies · Paper &amp; Delta demo</span
-        ><button id="reconcile-button">Reconcile flat account</button>
-      </footer>
-    </main>
+        <footer>
+          <span><span class="dot"></span> Delta India demo only</span
+          ><span>Your strategies · Paper &amp; Delta demo</span
+          ><button id="reconcile-button">Reconcile flat account</button>
+        </footer>
+      </main>
     </div>
-    <dialog id="workspace-search-dialog" class="workspace-command-dialog" aria-labelledby="workspace-search-title"><div class="command-search-heading"><svg class="ui-icon" aria-hidden="true"><use href="#i-search"/></svg><label class="sr-only" id="workspace-search-title" for="workspace-search-input">Search pages and actions</label><input id="workspace-search-input" type="search" placeholder="Where would you like to go?" autocomplete="off"><button type="button" class="icon-button" id="workspace-search-close" aria-label="Close workspace search"><svg class="ui-icon" aria-hidden="true"><use href="#i-close"/></svg></button></div><div id="workspace-search-results" class="workspace-command-results" aria-live="polite"></div><p class="command-footer">↑ ↓ to navigate <span>Enter to open · Esc to close</span></p></dialog>
+    <dialog
+      id="workspace-search-dialog"
+      class="workspace-command-dialog"
+      aria-labelledby="workspace-search-title"
+    >
+      <div class="command-search-heading">
+        <svg class="ui-icon" aria-hidden="true"><use href="#i-search" /></svg
+        ><label
+          class="sr-only"
+          id="workspace-search-title"
+          for="workspace-search-input"
+          >Search pages and actions</label
+        ><input
+          id="workspace-search-input"
+          type="search"
+          placeholder="Where would you like to go?"
+          autocomplete="off"
+        /><button
+          type="button"
+          class="icon-button"
+          id="workspace-search-close"
+          aria-label="Close workspace search"
+        >
+          <svg class="ui-icon" aria-hidden="true"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <div
+        id="workspace-search-results"
+        class="workspace-command-results"
+        aria-live="polite"
+      ></div>
+      <p class="command-footer">
+        ↑ ↓ to navigate <span>Enter to open · Esc to close</span>
+      </p>
+    </dialog>
     <dialog id="settings-dialog" aria-labelledby="settings-title">
       <div class="dialog-heading">
         <div>

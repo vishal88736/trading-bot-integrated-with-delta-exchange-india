@@ -184,7 +184,8 @@ function svgNode(name, attributes, label) {
   if (label !== undefined) el.textContent = label;
   return el;
 }
-let marketChartStyle = "area", chartInspection = null;
+let marketChartStyle = "area",
+  chartInspection = null;
 function drawChart(candles, position) {
   const svg = $("chart");
   svg.replaceChildren();
@@ -192,59 +193,194 @@ function drawChart(candles, position) {
   $("chart-empty").classList.toggle("hidden", candles.length > 0);
   $("market-chart-tooltip").classList.add("hidden");
   if (!candles.length) return;
-  const width = Math.max(240, svg.clientWidth || 700), height = 300;
+  const width = Math.max(240, svg.clientWidth || 700),
+    height = 300;
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  const bars = candles.slice(-Math.min(75, Math.max(18, Math.floor(width / 7)))),
-    left = 12, right = width - 76, top = 20, bottom = 235;
-  let low = Math.min(...bars.map((c) => c.low)), high = Math.max(...bars.map((c) => c.high));
+  const bars = candles.slice(
+      -Math.min(75, Math.max(18, Math.floor(width / 7))),
+    ),
+    left = 12,
+    right = width - 76,
+    top = 20,
+    bottom = 235;
+  let low = Math.min(...bars.map((c) => c.low)),
+    high = Math.max(...bars.map((c) => c.high));
   if (position) {
     low = Math.min(low, position.stop, ...position.targets);
     high = Math.max(high, position.stop, ...position.targets);
   }
-  const padding = (high - low) * .1 || 1;
-  high += padding; low -= padding;
+  const padding = (high - low) * 0.1 || 1;
+  high += padding;
+  low -= padding;
   const y = (value) => bottom - ((value - low) / (high - low)) * (bottom - top),
-    dx = (right - left) / bars.length, x = (index) => left + (index + .5) * dx;
+    dx = (right - left) / bars.length,
+    x = (index) => left + (index + 0.5) * dx;
   for (let i = 0; i < 5; i++) {
-    const value = low + ((high - low) * i) / 4, lineY = y(value);
-    svg.append(svgNode("line", {x1:left, x2:right, y1:lineY, y2:lineY, stroke:"#30313a", "stroke-width":1, "stroke-dasharray":"3 5"}),
-      svgNode("text", {x:right+9, y:lineY+4, fill:"#a5a6b2", "font-size":12}, number(value, 1)));
+    const value = low + ((high - low) * i) / 4,
+      lineY = y(value);
+    svg.append(
+      svgNode("line", {
+        x1: left,
+        x2: right,
+        y1: lineY,
+        y2: lineY,
+        stroke: "#30313a",
+        "stroke-width": 1,
+        "stroke-dasharray": "3 5",
+      }),
+      svgNode(
+        "text",
+        { x: right + 9, y: lineY + 4, fill: "#a5a6b2", "font-size": 12 },
+        number(value, 1),
+      ),
+    );
   }
-  const volumeMax = Math.max(...bars.map(c => c.volume), 1);
+  const volumeMax = Math.max(...bars.map((c) => c.volume), 1);
   bars.forEach((c, index) => {
-    const cx = x(index), color = c.close >= c.open ? "#79d1b2" : "#e49796";
+    const cx = x(index),
+      color = c.close >= c.open ? "#79d1b2" : "#e49796";
     if (marketChartStyle === "candles") {
-      svg.append(svgNode("line", {x1:cx, x2:cx, y1:y(c.high), y2:y(c.low), stroke:color, "stroke-width":1}),
-        svgNode("rect", {x:cx-dx*.28, y:Math.min(y(c.open),y(c.close)), width:Math.max(dx*.56,1), height:Math.max(Math.abs(y(c.open)-y(c.close)),1), fill:color}));
+      svg.append(
+        svgNode("line", {
+          x1: cx,
+          x2: cx,
+          y1: y(c.high),
+          y2: y(c.low),
+          stroke: color,
+          "stroke-width": 1,
+        }),
+        svgNode("rect", {
+          x: cx - dx * 0.28,
+          y: Math.min(y(c.open), y(c.close)),
+          width: Math.max(dx * 0.56, 1),
+          height: Math.max(Math.abs(y(c.open) - y(c.close)), 1),
+          fill: color,
+        }),
+      );
     }
-    svg.append(svgNode("rect", {x:cx-dx*.28, y:276-(c.volume/volumeMax)*23, width:Math.max(1,dx*.56), height:(c.volume/volumeMax)*23, fill:color, opacity:.3}));
+    svg.append(
+      svgNode("rect", {
+        x: cx - dx * 0.28,
+        y: 276 - (c.volume / volumeMax) * 23,
+        width: Math.max(1, dx * 0.56),
+        height: (c.volume / volumeMax) * 23,
+        fill: color,
+        opacity: 0.3,
+      }),
+    );
   });
   if (marketChartStyle === "area") {
-    const defs = svgNode("defs", {}), gradient = svgNode("linearGradient", {id:"market-area-fill", x1:"0", x2:"0", y1:"0", y2:"1"});
-    gradient.append(svgNode("stop", {offset:"0%", "stop-color":"#79d1b2", "stop-opacity":.23}), svgNode("stop", {offset:"100%", "stop-color":"#79d1b2", "stop-opacity":0}));
-    defs.append(gradient); svg.append(defs);
-    const path = bars.map((c,i) => `${i ? "L" : "M"} ${x(i)} ${y(c.close)}`).join(" ");
-    svg.append(svgNode("path", {d:`${path} L ${x(bars.length-1)} ${bottom} L ${x(0)} ${bottom} Z`, fill:"url(#market-area-fill)"}),
-      svgNode("path", {d:path, fill:"none", stroke:"#79d1b2", "stroke-width":1.8, "stroke-linejoin":"round"}),
-      svgNode("circle", {cx:x(bars.length-1), cy:y(bars.at(-1).close), r:3, fill:"#baf4dd", stroke:"#294f3f", "stroke-width":3}));
+    const defs = svgNode("defs", {}),
+      gradient = svgNode("linearGradient", {
+        id: "market-area-fill",
+        x1: "0",
+        x2: "0",
+        y1: "0",
+        y2: "1",
+      });
+    gradient.append(
+      svgNode("stop", {
+        offset: "0%",
+        "stop-color": "#79d1b2",
+        "stop-opacity": 0.23,
+      }),
+      svgNode("stop", {
+        offset: "100%",
+        "stop-color": "#79d1b2",
+        "stop-opacity": 0,
+      }),
+    );
+    defs.append(gradient);
+    svg.append(defs);
+    const path = bars
+      .map((c, i) => `${i ? "L" : "M"} ${x(i)} ${y(c.close)}`)
+      .join(" ");
+    svg.append(
+      svgNode("path", {
+        d: `${path} L ${x(bars.length - 1)} ${bottom} L ${x(0)} ${bottom} Z`,
+        fill: "url(#market-area-fill)",
+      }),
+      svgNode("path", {
+        d: path,
+        fill: "none",
+        stroke: "#79d1b2",
+        "stroke-width": 1.8,
+        "stroke-linejoin": "round",
+      }),
+      svgNode("circle", {
+        cx: x(bars.length - 1),
+        cy: y(bars.at(-1).close),
+        r: 3,
+        fill: "#baf4dd",
+        stroke: "#294f3f",
+        "stroke-width": 3,
+      }),
+    );
   }
-  for (const index of [...new Set([0, Math.floor(bars.length/3), Math.floor(2*bars.length/3), bars.length-1])]) {
-    svg.append(svgNode("text", {x:x(index), y:296, fill:"#a5a6b2", "font-size":12, "text-anchor":index===0?"start":index===bars.length-1?"end":"middle"}, new Date(bars[index].time*1000).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})));
+  for (const index of [
+    ...new Set([
+      0,
+      Math.floor(bars.length / 3),
+      Math.floor((2 * bars.length) / 3),
+      bars.length - 1,
+    ]),
+  ]) {
+    svg.append(
+      svgNode(
+        "text",
+        {
+          x: x(index),
+          y: 296,
+          fill: "#a5a6b2",
+          "font-size": 12,
+          "text-anchor":
+            index === 0
+              ? "start"
+              : index === bars.length - 1
+                ? "end"
+                : "middle",
+        },
+        new Date(bars[index].time * 1000).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      ),
+    );
   }
   if (position) {
-    const levels = [[position.entry,"Entry","#b3a0ef"], [position.stop,"SL","#f09a97"], ...position.targets.map((value,i) => [value,`TP${i+1}`,"#9bd8b1"])];
-    for (const [value,label,color] of levels) {
-      svg.append(svgNode("line", {x1:left, x2:right, y1:y(value), y2:y(value), stroke:color, "stroke-dasharray":"4 5", "stroke-width":1}),
-        svgNode("text", {x:left+5, y:y(value)-5, fill:color, "font-size":12}, `${label} ${number(value)}`));
+    const levels = [
+      [position.entry, "Entry", "#b3a0ef"],
+      [position.stop, "SL", "#f09a97"],
+      ...position.targets.map((value, i) => [value, `TP${i + 1}`, "#9bd8b1"]),
+    ];
+    for (const [value, label, color] of levels) {
+      svg.append(
+        svgNode("line", {
+          x1: left,
+          x2: right,
+          y1: y(value),
+          y2: y(value),
+          stroke: color,
+          "stroke-dasharray": "4 5",
+          "stroke-width": 1,
+        }),
+        svgNode(
+          "text",
+          { x: left + 5, y: y(value) - 5, fill: color, "font-size": 12 },
+          `${label} ${number(value)}`,
+        ),
+      );
     }
   }
   const change = (bars.at(-1).close / bars[0].open - 1) * 100;
   $("chart-close-price").textContent = number(bars.at(-1).close);
-  $("chart-window-change").textContent = `${change > 0 ? "+" : ""}${number(change)}% · ${bars.length} candles`;
+  $("chart-window-change").textContent =
+    `${change > 0 ? "+" : ""}${number(change)}% · ${bars.length} candles`;
   $("chart-window-change").classList.toggle("positive", change >= 0);
   $("chart-window-change").classList.toggle("negative", change < 0);
-  $("last-candle").textContent = `Last closed ${new Date(bars.at(-1).time * 1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}`;
-  chartInspection = {bars, x, y, left, right, top, bottom, width, height};
+  $("last-candle").textContent =
+    `Last closed ${new Date(bars.at(-1).time * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  chartInspection = { bars, x, y, left, right, top, bottom, width, height };
 }
 const timeframes = [
   "1m",
@@ -433,18 +569,16 @@ function settingsIssue(s) {
       key: "trend_fast_period",
       message: "Trend fast EMA must be shorter than trend slow EMA.",
     };
-  if (!(
-    s.rsi_oversold < s.rsi_exit_level && s.rsi_exit_level < s.rsi_overbought
-  ))
+  if (
+    !(s.rsi_oversold < s.rsi_exit_level && s.rsi_exit_level < s.rsi_overbought)
+  )
     return {
       key: "rsi_exit_level",
       message: "RSI levels must satisfy oversold < exit < overbought.",
     };
-  if (!(
-    0 < s.tp_atr[0] &&
-    s.tp_atr[0] < s.tp_atr[1] &&
-    s.tp_atr[1] < s.tp_atr[2]
-  ))
+  if (
+    !(0 < s.tp_atr[0] && s.tp_atr[0] < s.tp_atr[1] && s.tp_atr[1] < s.tp_atr[2])
+  )
     return {
       key: "tp0",
       message: "Set targets in increasing order: TP1 < TP2 < TP3.",

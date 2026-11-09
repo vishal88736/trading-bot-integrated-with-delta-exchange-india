@@ -11,6 +11,7 @@ The bot takes partial profits and advances the remaining stop loss: **TP1 → en
 ## Features
 
 - **Automation dashboard:** candle chart, strategy flow, saved position, current stop, and activity history.
+- **Reference-inspired UI:** charcoal cards, sidebar navigation, mint accents, gold coin artwork, volume/exit-allocation widgets, and responsive layouts across the workspace.
 - **Configurable strategies:** EMA/CMO cloud, momentum breakout, EMA trend following, SMC price action, RSI mean reversion, or your own Python entry rules.
 - **Sizing and exits:** optional planned-risk sizing (0.1–2%), direction controls, and strategy-specific exits alongside the ATR target/stop ladder.
 - **Settings preview:** live target reward/risk and partial contract sizes, keyboard navigation, and field-level validation feedback.
@@ -31,6 +32,10 @@ uv run --frozen delta-bot
 ```
 
 Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)**. No separate frontend server or JavaScript build is required.
+
+Overview loads a **read-only Delta demo market preview while the runner is paused**. It uses public product, ticker and closed-candle reads with empty API credentials. Preview responses are cached for 15 seconds and the page refreshes them every 30 seconds; failed refreshes mark cached data stale. Trading stays under the existing Start/Pause controls. Account balances remain in **Funds & holdings** and keep their exchange source and freshness labels.
+
+Choose **Area** or **Candles** above the chart. Hover, or focus the chart and use arrow keys, to inspect candle prices. **Ctrl K** (or **⌘ K**) searches workspace pages and settings. The mobile menu supports keyboard focus and Escape. The gold artwork is a local SVG; the UI needs no external image or font service.
 
 1. Open **Strategy settings** to choose the market, timeframes, indicators, and risk limits.
 2. Keep execution mode on **paper**, save, and select **Start paper run** to simulate with demo market data. This mode needs no API credentials.
@@ -274,6 +279,9 @@ Public reads and full-year BTCUSD/ETHUSD five-minute simulations (105,120 candle
 | [bot/backtest.py](bot/backtest.py)                           | Historical replay and jobs             |
 | [bot/risk.py](bot/risk.py)                                   | Levels, allocations, stop ladder       |
 | [bot/reference_checks.py](bot/reference_checks.py)           | Reference workers and source pins      |
+| [bot/market.py](bot/market.py)                               | Cached, read-only demo chart previews  |
+| [bot/static/studio.css](bot/static/studio.css)               | Video-reference theme and layout       |
+| [bot/static/studio.js](bot/static/studio.js)                 | Search, mobile navigation and widgets  |
 | [bot/backtrader_checks.py](bot/backtrader_checks.py)         | Independent broker scenarios           |
 | [strategies/](strategies/)                                   | Entry rules                            |
 | [clients/delta.py](clients/delta.py)                         | Demo REST v2 client and public history |
