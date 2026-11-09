@@ -259,6 +259,8 @@ uv build --no-sources
 
 Coverage includes replay fills/costs/risk limits, stop ladders, indicator-window parity, account parsing/staleness, secret redaction, restart recovery, ambiguous writes, API signing, local HTTP controls, Backtrader execution/fault detection, and UI interactions.
 
+The [2026-11-09 validation record](docs/evidence/backtesting-validation.json) covers four one-year ETHUSD strategy replays (105,120 five-minute candles each), parameter comparison, walk-forward testing, risk sizing with spread, and ETHUSD/BTCUSD comparison. All four reference checks agreed on each selected run, with costs/ledgers reconciled and HTTP exports checked. Replay limits were raised to exercise execution paths; saved trading settings were preserved. These tested settings produced losses. This evidence supports implementation consistency, not a claim of profitable trading.
+
 Public reads and full-year BTCUSD/ETHUSD five-minute simulations (105,120 candles for 365 days) have completed, along with seven-day demo-history tests and reference checks. These are historical simulations. Read-only authenticated account snapshots have also been checked locally. Actual demo orders and live stop amendments still require a dedicated demo validation run. DOM tests do not establish rendered-browser layout or live exchange execution.
 
 ### Project map
