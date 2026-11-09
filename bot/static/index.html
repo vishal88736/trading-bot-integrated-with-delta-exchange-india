@@ -3,52 +3,71 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Delta / Automation</title>
+    <title>Delta Studio · Automation</title>
     <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/studio.css" />
     <script src="/static/strategies.js" defer></script>
     <script src="/static/app.js" defer></script>
     <script src="/static/research.js" defer></script>
     <script src="/static/lab.js" defer></script>
+    <script src="/static/studio.js" defer></script>
   </head>
   <body>
-    <header class="topbar">
-      <a class="brand" href="/" aria-label="Delta automation home"
-        ><span class="brand-icon">↗</span> delta<span class="brand-dot">/</span
-        ><span class="brand-sub">studio</span></a
-      >
-      <nav aria-label="Main navigation">
-        <button class="nav-active" id="overview-tab">Automation</button
-        ><button id="strategy-tab">Strategy settings</button
-        ><button id="account-tab">Account</button
-        ><button id="backtest-tab">Backtest</button
-        ><button id="activity-tab">Activity</button>
-      </nav>
-      <div class="header-status">
-        <button
-          type="button"
-          id="execution-mode-button"
-          class="execution-mode-pill"
-        >
-          <span id="execution-mode-label">Checking mode…</span>
-        </button>
-        <button
-          class="connection-pill"
-          id="connection-button"
-          aria-label="Open Delta demo account connection settings"
-        >
-          <span class="dot gray"></span>
-          <span id="connection-label">Demo account connection</span>
-          <span class="avatar">D</span>
-        </button>
-      </div>
-    </header>
-    <main>
+    <svg class="studio-icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+      <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 7H5a2 2 0 0 1 0-4h13v4M3 5v14a2 2 0 0 0 2 2h15V7M20 11h-6v6h6"/><path d="M16 14h1"/></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 3v17h17M7 15l4-5 4 3 6-8"/></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M6 3v5m0 6v7M12 3v10m0 5v3M18 3v2m0 6v10"/><rect x="3" y="8" width="6" height="6" rx="2"/><rect x="9" y="12" width="6" height="6" rx="2"/><rect x="15" y="5" width="6" height="6" rx="2"/></symbol>
+      <symbol id="i-activity" viewBox="0 0 24 24"><path d="M2 12h5l3-8 4 16 3-8h5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 19 19 5M5 5h14v14"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 5v16M12 5C8 2 3 3 3 3v16s5-1 9 2c4-3 9-2 9-2V3s-5-1-9 2Z"/></symbol>
+    </defs></svg>
+    <a class="skip-link" href="#main-content">Skip to workspace</a>
+    <div class="studio-shell">
+      <button id="sidebar-backdrop" class="sidebar-backdrop hidden" aria-label="Close navigation" tabindex="-1"></button>
+      <aside class="sidebar" id="workspace-sidebar" aria-label="Workspace sidebar">
+        <a class="brand" href="#automation" aria-label="Delta Studio home"><span class="brand-mark" aria-hidden="true">Δ</span><span>Delta <b>Studio</b></span></a>
+        <nav class="sidebar-nav" aria-label="Main navigation">
+          <div class="nav-section-label">WORKSPACE</div>
+          <button class="nav-active" id="overview-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-grid"/></svg><span>Overview</span></button>
+          <button id="account-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-wallet"/></svg><span>Funds &amp; holdings</span></button>
+          <button id="backtest-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-chart"/></svg><span>Backtesting</span><span class="nav-tag">FREE</span></button>
+          <div class="nav-section-label">AUTOMATION</div>
+          <button id="strategy-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-sliders"/></svg><span>Strategy settings</span></button>
+          <button id="activity-tab"><svg class="ui-icon" aria-hidden="true"><use href="#i-activity"/></svg><span>Activity log</span></button>
+          <div class="nav-section-label">RESOURCES</div>
+          <a href="https://github.com/vishal88736/trading-bot-integrated-with-delta-exchange-india/blob/main/docs/backtesting.md" target="_blank" rel="noopener noreferrer"><svg class="ui-icon" aria-hidden="true"><use href="#i-book"/></svg><span>Backtesting guide</span><span aria-hidden="true">↗</span></a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="sidebar-promo"><span class="mini-label">BUILT AROUND YOU</span><h2>Your rules.<br>Your next move.</h2><p>Find your edge. Put it to the test.</p><button type="button" data-studio-action="backtest">Explore backtesting <span aria-hidden="true">↗</span></button><span class="promo-orbit" aria-hidden="true">Δ</span></div>
+          <div class="sidebar-environment"><span class="dot"></span> Delta India <span>Demo workspace</span></div>
+        </div>
+      </aside>
+      <header class="topbar">
+        <div class="topbar-leading">
+          <button type="button" class="icon-button sidebar-toggle" id="sidebar-toggle" aria-label="Open navigation" aria-controls="workspace-sidebar" aria-expanded="false"><svg class="ui-icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+          <button type="button" class="workspace-search" id="workspace-search-open" aria-label="Search workspace"><svg class="ui-icon" aria-hidden="true"><use href="#i-search"/></svg><span>Search workspace</span><kbd>Ctrl K</kbd></button>
+          <span class="workspace-breadcrumb">Workspace <span aria-hidden="true">/</span> <strong id="workspace-page-label">Overview</strong></span>
+        </div>
+        <div class="header-status">
+          <button type="button" id="execution-mode-button" class="execution-mode-pill"><span class="dot"></span><span id="execution-mode-label">Checking mode…</span></button>
+          <button type="button" class="icon-button header-activity" data-studio-action="activity" aria-label="View recent activity"><svg class="ui-icon" aria-hidden="true"><use href="#i-bell"/></svg></button>
+          <button class="connection-pill" id="connection-button" aria-label="Open Delta demo account connection settings"><span class="avatar">D</span><span class="connection-copy"><strong>Delta Exchange</strong><span><i class="dot gray"></i><span id="connection-label">Demo account connection</span></span></span></button>
+        </div>
+      </header>
+      <main id="main-content" tabindex="-1">
+
       <div id="automation-view">
         <div class="page-heading">
           <div>
-            <div class="eyebrow">YOUR TRADING WORKSPACE</div>
-            <h1>Automation overview<span class="title-dot">.</span></h1>
-            <p>A clear strategy. A stop that moves with you.</p>
+            <div class="eyebrow">YOUR WORKSPACE, IN SYNC</div>
+            <h1>Trading overview<span class="title-dot">.</span></h1>
+            <p>A view of the market. A strategy of your own.</p>
           </div>
           <div class="heading-actions">
             <button
@@ -66,7 +85,8 @@
         <div id="notice" class="notice" role="status" aria-live="polite">
           Paper mode uses Delta demo market data. No exchange orders are sent.
         </div>
-        <section class="stats" aria-label="Runner metrics">
+        <div class="dashboard-grid"><div class="dashboard-primary">
+        <section class="stats runner-stats" aria-label="Runner metrics">
           <article>
             <span>Automation status</span
             ><strong id="status-value"
@@ -84,49 +104,6 @@
             ><strong id="pnl-value">—</strong>
             <p>Bot fills only · quote currency</p>
           </article>
-          <article>
-            <span>Open position</span><strong id="position-value">Flat</strong>
-            <p id="position-sub">No active trade</p>
-          </article>
-          <article>
-            <span>Current stop loss</span><strong id="stop-value">—</strong>
-            <p id="stop-sub">Moves after each target</p>
-          </article>
-        </section>
-        <section
-          id="paper-position-panel"
-          class="data-panel paper-position-panel hidden"
-          aria-labelledby="paper-position-title"
-        >
-          <div class="section-heading">
-            <div>
-              <h2 id="paper-position-title">Paper simulation</h2>
-              <p>
-                This trade is simulated locally. It does not create an order or
-                position in your Delta demo account.
-              </p>
-            </div>
-            <span id="paper-position-status" class="pill muted"></span>
-          </div>
-          <div
-            class="table-scroll"
-            tabindex="0"
-            aria-label="Simulated paper position table"
-          >
-            <table>
-              <thead>
-                <tr>
-                  <th>Market</th>
-                  <th>Direction</th>
-                  <th>Open contracts</th>
-                  <th>Entry</th>
-                  <th>Stop loss</th>
-                  <th>Next target</th>
-                </tr>
-              </thead>
-              <tbody id="account-paper-position"></tbody>
-            </table>
-          </div>
         </section>
         <section class="workspace" aria-label="Strategy workspace">
           <div class="workspace-top">
@@ -144,41 +121,56 @@
             <section class="chart-panel" aria-label="Price chart">
               <div class="panel-heading">
                 <div>
-                  <h2>Price action</h2>
+                  <h2>Market overview</h2>
                   <span id="chart-caption"
                     >Closed candles · entries after candle close</span
                   >
                 </div>
-                <button
+                <div class="chart-tools"><div class="chart-style-controls" role="group" aria-label="Chart display"><button type="button" data-chart-style="area" aria-pressed="true">Area</button><button type="button" data-chart-style="candles" aria-pressed="false">Candles</button></div><button
                   class="tiny-button"
                   id="chart-settings"
                   aria-label="Change chart settings"
                 >
                   •••
-                </button>
+                </button></div>
               </div>
+              <div class="market-chart-summary"><strong id="chart-close-price">—</strong><span id="chart-window-change" class="market-change">No candles loaded</span><span class="chart-price-note">Latest closed candle</span><button type="button" id="market-refresh" class="tiny-button" aria-label="Refresh read-only market preview">↻</button></div>
               <div class="chart-wrap">
                 <svg
-                  id="chart"
-                  viewBox="0 0 700 430"
+                  id="chart" tabindex="0"
+                  viewBox="0 0 700 300"
                   role="img"
-                  aria-label="Candlestick chart of demo market data"
+                  aria-label="Price chart of closed Delta demo candles"
                 ></svg>
+                <div class="chart-tooltip hidden" id="market-chart-tooltip" role="status"></div>
                 <div class="chart-empty" id="chart-empty">
                   <div class="empty-icon">⌁</div>
                   <h3>Your market, in focus.</h3>
                   <p>
-                    Start a paper run to load demo candles.<br />No API key
-                    needed for public market data.
+                    Loading a read-only market preview.<br />Your trading runner can stay paused.
                   </p>
                 </div>
               </div>
               <div class="chart-footer">
-                <span><i class="legend-dot green"></i> Bullish candle</span
-                ><span><i class="legend-dot red"></i> Bearish candle</span
+                <span><i class="legend-dot green"></i> Demo market</span
+                ><span><i class="legend-dot violet"></i> Saved trade levels</span
                 ><span id="last-candle">No candles yet</span>
               </div>
             </section>
+
+          </div>
+        </section>
+        <div class="insight-grid">
+          <section class="data-panel volume-panel" aria-labelledby="volume-title"><div class="section-heading"><div><span class="mini-label">MARKET ACTIVITY</span><h2 id="volume-title">Trading volume</h2></div><span class="pill neutral">24 candles</span></div><strong id="volume-total" class="insight-total">—</strong><p class="form-note" id="volume-caption">Closed candles · exchange-reported units</p><svg id="market-volume-chart" viewBox="0 0 440 145" role="img" aria-label="Volume of the last 24 closed demo candles"></svg><p id="volume-empty" class="form-note">Volume appears with the market preview.</p></section>
+          <section class="data-panel allocation-panel" aria-labelledby="allocation-title"><div class="section-heading"><div><span class="mini-label">YOUR EXIT PLAN</span><h2 id="allocation-title">Exit allocation</h2></div><svg class="ui-icon" aria-hidden="true"><use href="#i-shield"/></svg></div><div class="allocation-content"><div class="allocation-ring" id="allocation-ring" role="img" aria-label="Three-part take-profit allocation"><div><span id="allocation-center-label">Exit stages</span><strong id="allocation-center-value">3</strong></div></div><dl id="allocation-legend" class="allocation-legend"></dl></div><p class="form-note" id="allocation-caption">Half, quarter, and the remaining contracts.</p></section>
+        </div>
+        </div>
+        <aside class="dashboard-rail" aria-label="Strategy and position summary">
+          <section class="strategy-promo"><span class="mini-label">MADE FOR YOUR STRATEGY</span><h2>Your strategy.<br>On autopilot<span class="sparkle" aria-hidden="true">✦</span></h2><p>Build your rules. Test every decision before your next move.</p><button type="button" data-studio-action="backtest">Explore backtesting <span aria-hidden="true">↗</span></button><img src="/static/coins.svg" alt="" class="promo-coins" width="280" height="240"></section>
+          <section class="data-panel position-panel" aria-labelledby="position-panel-title"><div class="section-heading"><h2 id="position-panel-title">Position monitor</h2><span class="dot gray" id="position-monitor-dot"></span></div><p id="position-source-label" class="form-note">Paper simulation · runner paused</p><div class="position-headline"><strong id="position-value">Flat</strong><span id="position-market-label">BTCUSD</span></div><p id="position-sub" class="form-note">No active trade</p><dl class="position-levels"><div><dt>Current stop loss</dt><dd id="stop-value">—</dd></div><div><dt>Next target</dt><dd id="position-next-target">—</dd></div></dl><p id="stop-sub" class="form-note">Moves after each target</p><div class="monitor-status" id="monitor-status"><span class="dot gray"></span><span id="monitor-status-label">Waiting for a trade</span></div></section>
+          <section class="data-panel strategy-focus"><span class="mini-label">STRATEGY IN FOCUS</span><h2 id="strategy-focus-name">EMA / CMO trend</h2><p id="strategy-focus-timeframes" class="form-note">5m signals · 1h confirmation</p><button type="button" class="text-action" data-studio-action="settings">Adjust your rules <span aria-hidden="true">↗</span></button></section>
+        </aside></div>
+        <details class="strategy-blueprint"><summary><span><svg class="ui-icon" aria-hidden="true"><use href="#i-sliders"/></svg>Strategy blueprint</span><span>View your execution rules <span aria-hidden="true">⌄</span></span></summary>
             <section class="flow-panel" aria-label="Strategy flow">
               <div class="panel-heading">
                 <div>
@@ -269,7 +261,40 @@
                   <span class="pill neutral" id="flow-ready">READY</span>
                 </div>
               </div>
-            </section>
+            </section></details>
+        <section
+          id="paper-position-panel"
+          class="data-panel paper-position-panel hidden"
+          aria-labelledby="paper-position-title"
+        >
+          <div class="section-heading">
+            <div>
+              <h2 id="paper-position-title">Paper simulation</h2>
+              <p>
+                This trade is simulated locally. It does not create an order or
+                position in your Delta demo account.
+              </p>
+            </div>
+            <span id="paper-position-status" class="pill muted"></span>
+          </div>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            aria-label="Simulated paper position table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th>Market</th>
+                  <th>Direction</th>
+                  <th>Open contracts</th>
+                  <th>Entry</th>
+                  <th>Stop loss</th>
+                  <th>Next target</th>
+                </tr>
+              </thead>
+              <tbody id="account-paper-position"></tbody>
+            </table>
           </div>
         </section>
         <section class="bottom-grid">
@@ -1215,10 +1240,12 @@
       <footer>
         <span><span class="dot"></span> Delta India demo only</span
         ><span
-          >Independent EMA / CMO / ATR strategy · No production trading</span
+          >Your strategies · Paper &amp; Delta demo</span
         ><button id="reconcile-button">Reconcile flat account</button>
       </footer>
     </main>
+    </div>
+    <dialog id="workspace-search-dialog" class="workspace-command-dialog" aria-labelledby="workspace-search-title"><div class="command-search-heading"><svg class="ui-icon" aria-hidden="true"><use href="#i-search"/></svg><label class="sr-only" id="workspace-search-title" for="workspace-search-input">Search pages and actions</label><input id="workspace-search-input" type="search" placeholder="Where would you like to go?" autocomplete="off"><button type="button" class="icon-button" id="workspace-search-close" aria-label="Close workspace search"><svg class="ui-icon" aria-hidden="true"><use href="#i-close"/></svg></button></div><div id="workspace-search-results" class="workspace-command-results" aria-live="polite"></div><p class="command-footer">↑ ↓ to navigate <span>Enter to open · Esc to close</span></p></dialog>
     <dialog id="settings-dialog" aria-labelledby="settings-title">
       <div class="dialog-heading">
         <div>

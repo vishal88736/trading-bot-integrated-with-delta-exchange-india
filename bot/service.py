@@ -6,6 +6,7 @@ from pathlib import Path
 from bot.account import Account
 from bot.backtest import Backtests
 from bot.engine import Engine
+from bot.market import MarketPreview
 from bot.models import State
 from bot.settings import atomic_json, read_settings
 from clients.delta import Delta, DeltaError, contract_size
@@ -21,6 +22,7 @@ class Service:
         self.active_settings = None
         self.error = None
         self.account = Account(self.credentials)
+        self.market = MarketPreview()
         self.backtests = Backtests(
             reference_root=root / "references",
             cache_path=root / "history.sqlite3",

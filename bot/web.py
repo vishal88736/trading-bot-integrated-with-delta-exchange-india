@@ -109,6 +109,12 @@ def create_app(root: Path = Path(".runtime")):
         with service.lock:
             return service.snapshot()
 
+    @app.get("/api/market")
+    def market_preview():
+        with service.lock:
+            settings = service.execution_settings()
+        return service.market.snapshot(settings)
+
     @app.post("/api/settings")
     def settings(value: Settings):
         with service.lock:

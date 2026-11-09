@@ -34,6 +34,7 @@ function showView(view, remember = true) {
     $(id).classList.toggle("nav-active", name === view);
     $(id).setAttribute("aria-current", name === view ? "page" : "false");
   }
+  document.dispatchEvent(new CustomEvent("workspace-view", {detail: view}));
   if (view === "account") refreshAccount();
   if (view === "backtest") {
     if (!backtestBase && current) copyBacktestSettings();
@@ -822,14 +823,14 @@ function drawEquity(points) {
         x2: right,
         y1: cy,
         y2: cy,
-        stroke: "#e4eae5",
+        stroke: "#30313a",
       }),
       svgNode(
         "text",
         {
           x: left - 10,
           y: cy + 4,
-          fill: "#4b5e53",
+          fill: "#a5a6b2",
           "font-size": 12,
           "text-anchor": "end",
         },
@@ -846,7 +847,7 @@ function drawEquity(points) {
     svgNode("polyline", {
       points: sampled.map(({ p, i }) => `${x(i)},${y(p.equity)}`).join(" "),
       fill: "none",
-      stroke: "#267451",
+      stroke: "#79d1b2",
       "stroke-width": 2,
     }),
   );
@@ -861,7 +862,7 @@ function drawEquity(points) {
         {
           x: x(index),
           y: height - 13,
-          fill: "#4b5e53",
+          fill: "#a5a6b2",
           "font-size": 12,
           "text-anchor":
             index === 0
