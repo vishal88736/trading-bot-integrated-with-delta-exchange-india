@@ -569,6 +569,8 @@
               JSON results ↓</button
             ><button id="research-report" class="secondary" disabled>
               HTML report ↓</button
+            ><button id="research-inputs" class="secondary" disabled>
+              Replay inputs ↓</button
             ><button id="research-quantstats" class="secondary hidden" disabled>
               QuantStats ↓
             </button>
@@ -869,7 +871,8 @@
               aria-labelledby="bt-settings-costs"
             >
               <p class="form-note">
-                Costs are simulated on every fill. One basis point equals 0.01%.
+                Market orders use the taker fee on every fill. One basis point
+                equals 0.01%. Half the spread is charged on each side.
               </p>
               <div class="form-grid">
                 <label class="field"
@@ -891,7 +894,29 @@
                     value="2"
                     required
                 /></label>
+                <label class="field"
+                  >Bid–ask spread (bps)<input
+                    id="backtest-spread"
+                    type="number"
+                    min="0"
+                    max="500"
+                    step="0.1"
+                    value="0"
+                    required
+                /></label>
+                <label class="field"
+                  >Cost sensitivity<select id="backtest-stress">
+                    <option value="5,10,20">5 / 10 / 20 bps slippage</option>
+                    <option value="10,20,50">10 / 20 / 50 bps slippage</option>
+                    <option value="">Baseline only</option>
+                  </select></label
+                >
               </div>
+              <p class="form-note">
+                Sensitivity reruns the selected rules on the same data.
+                Scenarios above your entry execution limit are skipped. Funding
+                and order-book liquidity are not simulated.
+              </p>
             </section>
             <p id="backtest-settings-error" class="form-error" role="alert"></p>
             <div class="dialog-footer">
@@ -1062,6 +1087,17 @@
               <h3 id="research-analytics-title">Risk &amp; consistency</h3>
               <dl id="research-metrics" class="research-metrics"></dl>
               <p id="research-metric-method" class="form-note"></p>
+              <h3>Execution costs</h3>
+              <dl id="research-costs" class="research-metrics"></dl>
+              <p id="research-sample-note" class="form-note"></p>
+              <h3>Cost sensitivity</h3>
+              <p id="research-stress-note" class="form-note"></p>
+              <div
+                id="research-stress-results"
+                class="table-scroll"
+                tabindex="0"
+                aria-label="Cost sensitivity results"
+              ></div>
               <h3>Monthly returns</h3>
               <p class="form-note">
                 UTC calendar months. An asterisk marks a partial month.
@@ -1140,9 +1176,11 @@
               <summary>Validation checks</summary>
               <p class="form-note">
                 Statistics checks use this trade ledger. Backtrader checks
-                bracket execution on controlled price paths. Expand its coverage
-                details to see what is tested.
+                controlled price paths. Backtesting.py replays the selected
+                period with its broker and a project execution adapter. Strategy
+                signals are shared. Expand each check for its coverage.
               </p>
+              <p id="research-data-quality" class="form-note"></p>
               <div id="bt-reference-checks"></div>
             </details>
           </section>

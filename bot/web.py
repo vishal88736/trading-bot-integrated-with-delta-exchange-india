@@ -161,6 +161,11 @@ def create_app(root: Path = Path(".runtime")):
         path = service.backtests.report(index, run_id, format)
         return FileResponse(path, filename=f"delta-backtest-{index}-{format}.html")
 
+    @app.get("/api/backtests/inputs/{index}")
+    def research_inputs(index: int, run_id: str):
+        path = service.backtests.input_report(index, run_id)
+        return FileResponse(path, filename=f"delta-backtest-{index}-inputs.json.gz")
+
     @app.post("/api/start")
     def start(value: StartRequest):
         service.start(confirm_demo=value.confirm_demo, expected_mode=value.expected_mode)

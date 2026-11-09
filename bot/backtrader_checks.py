@@ -316,6 +316,12 @@ def check_scenarios(path):
             "open_orders": 0,
             "failures": [],
         }
+        # Compare the broker fields, keeping richer cost attribution in the export.
+        for trade in dashboard["trades"]:
+            trade["exits"] = [
+                {k: leg[k] for k in ("time", "reason", "price", "quantity", "net_pnl")}
+                for leg in trade["exits"]
+            ]
         reference = broker_run(bt, case, bars)
         checks[case.name] = {
             "passed": agrees(dashboard, reference),

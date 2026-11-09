@@ -2475,3 +2475,6 @@ td details li {
     flex-direction: column;
   }
 }
+#research-data-quality {
+  overflow-wrap: anywhere;
+}

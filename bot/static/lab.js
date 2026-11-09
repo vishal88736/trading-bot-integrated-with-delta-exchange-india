@@ -163,6 +163,9 @@ function readResearchRequest() {
     );
   const samples = Number($("research-lookahead").value);
   return {
+    cost_stress_bps: $("backtest-stress").value
+      ? $("backtest-stress").value.split(",").map(Number)
+      : [],
     cache: $("research-cache").value,
     check_lookahead: samples > 0,
     lookahead_samples: samples || 16,
@@ -272,6 +275,84 @@ function renderResearchAnalytics(result) {
     ["failed", "error"].includes(check?.status),
   );
   $("research-history").replaceChildren();
+  const quality = result.data_quality;
+  $("research-data-quality").textContent = quality
+    ? `${quality.coverage_percent}% coverage · ${number(quality.actual_candles, 0)} / ` +
+      `${number(quality.expected_candles, 0)} complete signal candles. ${quality.scope} ` +
+      (quality.data_sha256
+        ? `Data SHA-256: ${quality.data_sha256}`
+        : "Fold fingerprints are in the JSON export.")
+    : "No input completeness record was saved with this result.";
+  $("research-costs").replaceChildren();
+  const summary = result.summary;
+  for (const [label, key] of [
+    ["Before-cost P&L", "before_cost_pnl"],
+    ["Taker fees", "fees"],
+    ["Slippage cost", "slippage_cost"],
+    ["Spread cost", "spread_cost"],
+  ]) {
+    const group = document.createElement("div");
+    researchCell(group, label, "dt");
+    researchCell(
+      group,
+      summary[key] == null ? "—" : number(summary[key]) + " " + result.quote,
+      "dd",
+    );
+    $("research-costs").append(group);
+  }
+  $("research-sample-note").textContent =
+    `${summary.trades} closed positions. ` +
+    (summary.trades < 100
+      ? "Small sample: inspect more dates and market regimes before drawing conclusions. "
+      : "Trade count alone does not establish robustness across market regimes. ") +
+    "Profit factor includes costs. Before-cost P&L removes costs from these fills; it is not a separate zero-cost test.";
+  const stress = result.cost_stress;
+  $("research-stress-note").textContent = stress
+    ? stress.status.replaceAll("_", " ") + ": " + stress.scope
+    : "Cost sensitivity was not recorded. Run a new test to include it.";
+  $("research-stress-results").replaceChildren();
+  if (stress?.scenarios?.length) {
+    const table = document.createElement("table"),
+      head = document.createElement("tr");
+    for (const label of [
+      "Slippage per fill",
+      "Return",
+      "Max drawdown",
+      "Positions",
+      "Status",
+    ])
+      researchCell(head, label, "th");
+    table.append(head);
+    const baseline = {
+      slippage_bps: result.request.slippage_bps,
+      ...summary,
+      status: "baseline",
+    };
+    for (const scenario of [baseline, ...stress.scenarios]) {
+      const row = document.createElement("tr");
+      researchCell(row, number(scenario.slippage_bps) + " bps");
+      const cell = researchCell(
+        row,
+        scenario.return_percent == null
+          ? "—"
+          : number(scenario.return_percent) + "%",
+      );
+      cell.className = returnClass(scenario.return_percent);
+      researchCell(
+        row,
+        scenario.max_drawdown_percent == null
+          ? "—"
+          : number(scenario.max_drawdown_percent) + "%",
+      );
+      researchCell(row, scenario.trades ?? "—");
+      researchCell(
+        row,
+        scenario.message || scenario.status.replaceAll("_", " "),
+      );
+      table.append(row);
+    }
+    $("research-stress-results").append(table);
+  }
   for (const item of result.history || []) {
     const li = document.createElement("li");
     li.textContent =
@@ -294,6 +375,7 @@ function renderResearchAnalytics(result) {
   const ready =
     researchJob?.status === "completed" && Boolean(researchJob?.run_id);
   $("research-report").disabled = !ready;
+  $("research-inputs").disabled = !ready || !result.data_quality;
   $("research-quantstats").classList.toggle(
     "hidden",
     !data?.quantstats_version,
@@ -360,6 +442,9 @@ function renderResearchJob(job) {
   const study = job.study;
   $("research-study").classList.toggle("hidden", !study);
   $("research-report").disabled = job.status !== "completed" || !job.result;
+  $("research-inputs").disabled =
+    job.status !== "completed" || !job.result?.data_quality;
+  $("research-quantstats").disabled = job.status !== "completed" || !job.result;
   if (!study) {
     if (job.result) renderResearchAnalytics(backtestResult || job.result);
     return;
@@ -478,17 +563,21 @@ async function downloadResearchReport(format) {
   if (!researchJob?.run_id || !backtestResult) return;
   const index = researchSelection ?? researchJob.study?.selected_id ?? 0;
   const button = $(
-    format === "html" ? "research-report" : "research-quantstats",
+    format === "inputs"
+      ? "research-inputs"
+      : format === "html"
+        ? "research-report"
+        : "research-quantstats",
   );
   button.disabled = true;
   try {
     const response = await fetch(
-      "/api/backtests/reports/" +
+      "/api/backtests/" +
+        (format === "inputs" ? "inputs/" : "reports/") +
         index +
         "?run_id=" +
         encodeURIComponent(researchJob.run_id) +
-        "&format=" +
-        format,
+        (format === "inputs" ? "" : "&format=" + format),
     );
     if (!response.ok)
       throw new Error((await response.json()).detail || "Report export failed");
@@ -502,7 +591,7 @@ async function downloadResearchReport(format) {
       backtestResult.settings.strategy +
       "-" +
       format +
-      ".html";
+      (format === "inputs" ? ".json.gz" : ".html");
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (error) {
@@ -513,3 +602,4 @@ async function downloadResearchReport(format) {
 }
 $("research-report").onclick = () => downloadResearchReport("html");
 $("research-quantstats").onclick = () => downloadResearchReport("quantstats");
+$("research-inputs").onclick = () => downloadResearchReport("inputs");

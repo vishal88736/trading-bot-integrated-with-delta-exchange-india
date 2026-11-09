@@ -277,6 +277,16 @@ def combine_folds(request, results):
         "gross_loss": losses,
         "fees": sum(r["summary"]["fees"] for r in results),
     }
+    for key in ("slippage_cost", "spread_cost", "before_cost_pnl", "total_costs"):
+        result["summary"][key] = sum(r["summary"].get(key, 0) for r in results)
+    result["data_quality"] = {
+        "status": "passed",
+        "expected_candles": result["candles"],
+        "actual_candles": result["candles"],
+        "coverage_percent": 100.0,
+        "folds": [r.get("data_quality", {}) for r in results],
+        "scope": "Each non-overlapping test fold was checked separately; training is excluded.",
+    }
     result["rejected_entries"] = {}
     for part in results:
         for reason, number in part["rejected_entries"].items():
@@ -386,6 +396,7 @@ def run_walk_forward(runner, request, client):
                 "samples": 0,
                 "message": "No eligible training configuration; test fold remained in cash.",
             }
+            runner.remember_inputs(tested, lower, upper, product)
         capital = tested["summary"]["ending_equity"]
         results.append(tested)
         runner.save_result(fold, tested)

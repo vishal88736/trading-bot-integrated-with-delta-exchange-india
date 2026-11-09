@@ -32,6 +32,11 @@ REFERENCES = (
         "https://github.com/mementum/backtrader",
         "b853d7c90b6721476eb5a5ea3135224e33db1f14",
     ),
+    (
+        "Backtesting.py",
+        "https://github.com/kernc/backtesting.py",
+        "ca2e2611621e472542ba90f7243a1fa06a7d7108",
+    ),
 )
 CHECK_LOCK = threading.Lock()
 
@@ -63,7 +68,7 @@ def compare(actual, expected):
     }
 
 
-def validate(result, root, only=None):
+def validate(result, root, only=None, inputs=None):
     """Run optional third-party readers away from the trading server's process."""
     if only is not None and (not only or set(only) - {name for name, _, _ in REFERENCES}):
         raise ValueError("Choose a known reference")
@@ -71,11 +76,11 @@ def validate(result, root, only=None):
     try:
         process = subprocess.run(
             [sys.executable, str(Path(__file__).resolve()), str(root.resolve()), *(only or [])],
-            input=json.dumps(result),
+            input=json.dumps({"result": result, "inputs": inputs}, allow_nan=False),
             capture_output=True,
             text=True,
             env=environment,
-            timeout=60,
+            timeout=180,
             check=True,
         )
         return json.loads(process.stdout)
@@ -93,7 +98,7 @@ def validate(result, root, only=None):
         ]
 
 
-def _validate(result, root, only=None):
+def _validate(result, root, only=None, inputs=None):
     records = []
     for name, url, commit in REFERENCES:
         if only is not None and name not in only:
@@ -102,9 +107,13 @@ def _validate(result, root, only=None):
             "name": name,
             "url": url,
             "commit": commit,
-            "kind": "execution_scenarios" if name == "Backtrader" else "statistics",
+            "kind": "strategy_replay"
+            if name == "Backtesting.py"
+            else ("execution_scenarios" if name == "Backtrader" else "statistics"),
             "scope": (
-                "Controlled bracket execution scenarios; not a replay of this strategy or period"
+                "Independent broker replay with a project OHLC execution adapter; shared signals"
+                if name == "Backtesting.py"
+                else "Controlled bracket scenarios; not a replay of this strategy or period"
                 if name == "Backtrader"
                 else "Statistics from the same trade ledger; not independent strategy execution"
             ),
@@ -118,6 +127,19 @@ def _validate(result, root, only=None):
             continue
         try:
             verify_checkout(path, commit)
+            if name == "Backtesting.py":
+                if inputs is None:
+                    record.update(
+                        status="unavailable",
+                        message="Exact replay inputs are required; run a new backtest",
+                        scope="Independent broker replay was not run.",
+                    )
+                else:
+                    from bot.backtesting_checks import check_replay
+
+                    record.update(check_replay(result, inputs, path))
+                records.append(record)
+                continue
             if name == "Backtrader":
                 from bot.backtrader_checks import check_scenarios
 
@@ -247,9 +269,15 @@ def _validate(result, root, only=None):
 
 
 if __name__ == "__main__":
+    payload = json.load(sys.stdin)
     print(
         json.dumps(
-            _validate(json.load(sys.stdin), Path(sys.argv[1]), only=sys.argv[2:] or None),
+            _validate(
+                payload["result"],
+                Path(sys.argv[1]),
+                only=sys.argv[2:] or None,
+                inputs=payload.get("inputs"),
+            ),
             allow_nan=False,
         )
     )

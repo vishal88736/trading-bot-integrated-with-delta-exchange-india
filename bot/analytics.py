@@ -129,6 +129,9 @@ def html_report(result, study=None):
         ("Calmar", formatted(data["metrics"]["calmar"])),
         ("Longest drawdown", formatted(data["metrics"]["max_drawdown_days"], " days")),
         ("Fees", formatted(summary["fees"], " " + quote)),
+        ("Slippage cost", formatted(summary.get("slippage_cost"), " " + quote)),
+        ("Spread cost", formatted(summary.get("spread_cost"), " " + quote)),
+        ("Before-cost P&L", formatted(summary.get("before_cost_pnl"), " " + quote)),
     ]
     cards = "".join(
         f"<div><span>{escape(k)}</span><strong>{escape(v)}</strong></div>" for k, v in metrics
@@ -153,6 +156,40 @@ def html_report(result, study=None):
     )
     bias = result.get("lookahead_check", {})
     validation = escape(bias.get("message", "Lookahead check was not run"))
+    quality = result.get("data_quality", {})
+    validation += "<p>" + escape(quality.get("scope", "No completeness record saved")) + "</p>"
+    for key in ("data_sha256", "code_sha256"):
+        if key in quality:
+            validation += f"<p>{key}: <code>{escape(quality[key])}</code></p>"
+    for check in result.get("reference_checks", []):
+        validation += (
+            f"<p><strong>{escape(check['name'])}: {escape(check['status'])}</strong> "
+            f"{escape(check.get('message', ''))} {escape(check.get('scope', ''))}</p>"
+        )
+    stress = result.get("cost_stress", {})
+    cost_rows = "".join(
+        "<tr>"
+        + "".join(
+            f"<td>{escape(str(v))}</td>"
+            for v in (
+                formatted(row["slippage_bps"], " bps"),
+                formatted(row.get("return_percent"), "%"),
+                formatted(row.get("max_drawdown_percent"), "%"),
+                row.get("trades", "—"),
+                row.get("message", row["status"]),
+            )
+        )
+        + "</tr>"
+        for row in stress.get("scenarios", [])
+    )
+    costs_section = (
+        f"<h2>Cost sensitivity</h2><p>{escape(stress.get('scope', 'Not recorded'))}</p>"
+        "<table><tr><th>Slippage per fill</th><th>Return</th><th>Max drawdown</th>"
+        f"<th>Positions</th><th>Status</th></tr>{cost_rows}</table>"
+        "<p>Before-cost P&L removes costs from this run's fills; it is not a zero-cost rerun. "
+        "Profit factor uses net closed-position P&L. A small sample or high profit factor alone "
+        "does not establish a durable edge.</p>"
+    )
     study_section = ""
     if study:
         rows = "".join(
@@ -187,7 +224,8 @@ main{{max-width:1100px;margin:auto;padding:32px}}h1{{font-size:32px}}h2{{margin-
 .metrics div,svg{{background:white;border:1px solid #dce3dc;border-radius:12px;padding:16px}}
 strong,span{{display:block}}strong{{font-size:23px}}svg{{width:100%;box-sizing:border-box}}
 table{{width:100%;border-collapse:collapse;background:white}}td,th{{text-align:left;padding:12px;
-border-bottom:1px solid #dce3dc}}p,li{{max-width:90ch}}@media print{{body{{background:white}}}}
+border-bottom:1px solid #dce3dc}}p,li{{max-width:90ch;overflow-wrap:anywhere}}
+@media print{{body{{background:white}}}}
 </style></head><body><main><h1>{escape(symbol)} · {escape(strategy_name)}</h1>
 <p>{escape(result["source"])}<br>{escape(period)}<br>Exit policy: {escape(exit_mode)}</p>
 <div class="metrics">{cards}</div>
@@ -195,7 +233,8 @@ border-bottom:1px solid #dce3dc}}p,li{{max-width:90ch}}@media print{{body{{backg
 <polyline points="{coordinates}" fill="none" stroke="#267451" stroke-width="2"/></svg>
 <h2>Monthly returns</h2><p>* Partial month</p>
 <table><tr><th>UTC month</th><th>Return</th></tr>{monthly}</table>{study_section}
-<h2>Validation</h2><p>{validation}</p><h2>Methodology</h2><ul>{assumptions}</ul>
+{costs_section}<h2>Validation</h2><div>{validation}</div>
+<h2>Methodology</h2><ul>{assumptions}</ul>
 <p>Historical simulation. Funding, liquidation and live execution are not modeled.</p>
 </main></body></html>"""
 

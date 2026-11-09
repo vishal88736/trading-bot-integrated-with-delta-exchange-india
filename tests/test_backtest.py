@@ -7,7 +7,7 @@ from bot.backtest import BacktestRequest, simulate
 from bot.models import Candle, Signal
 from bot.settings import Settings
 
-START = 10000000
+START = 1728000000
 PRODUCT = {"contract_value": "1", "tick_size": "0.1", "quoting_asset": {"symbol": "USD"}}
 
 
@@ -24,8 +24,10 @@ def request(**kwargs):
             max_loss_quote=10000.0,
         ),
     )
+    bars = kwargs.pop("candles", None)
+    end = bars[-1].time + 300 if bars else START + 1500
     return BacktestRequest(
-        settings=settings, start=START, end=START + 1500, initial_balance=10000.0, **kwargs
+        settings=settings, start=START, end=end, initial_balance=10000.0, **kwargs
     )
 
 
@@ -77,7 +79,7 @@ def history(rows):
 def test_three_tier_replay_fills_next_open_and_advances_stop(side, rows, expected_stops):
     bars, higher = history(rows)
     result = simulate(
-        request(fee_bps=0.0, slippage_bps=0.0), bars, higher, PRODUCT, OneSignal(side)
+        request(candles=bars, fee_bps=0.0, slippage_bps=0.0), bars, higher, PRODUCT, OneSignal(side)
     )
     assert len(result["trades"]) == 1
     trade = result["trades"][0]
@@ -90,7 +92,9 @@ def test_three_tier_replay_fills_next_open_and_advances_stop(side, rows, expecte
 
 def test_ambiguous_bar_uses_initial_stop_before_target():
     bars, higher = history([(100, 101, 99, 100), (100, 140, 70, 100), (100, 101, 99, 100)])
-    result = simulate(request(fee_bps=0.0, slippage_bps=0.0), bars, higher, PRODUCT, OneSignal())
+    result = simulate(
+        request(candles=bars, fee_bps=0.0, slippage_bps=0.0), bars, higher, PRODUCT, OneSignal()
+    )
     assert result["trades"][0]["exits"][0]["reason"] == "stop"
     assert result["summary"]["net_pnl"] == -80
     assert result["ambiguous_candles"] == 1
@@ -98,21 +102,27 @@ def test_ambiguous_bar_uses_initial_stop_before_target():
 
 def test_tp1_then_break_even_in_same_bar_is_conservative():
     bars, higher = history([(100, 101, 99, 100), (100, 115, 95, 110), (100, 101, 99, 100)])
-    result = simulate(request(fee_bps=0.0, slippage_bps=0.0), bars, higher, PRODUCT, OneSignal())
+    result = simulate(
+        request(candles=bars, fee_bps=0.0, slippage_bps=0.0), bars, higher, PRODUCT, OneSignal()
+    )
     assert [e["reason"] for e in result["trades"][0]["exits"]] == ["tp1", "advanced_stop"]
     assert result["summary"]["net_pnl"] == 20
 
 
 def test_gap_stop_fills_at_worse_open():
     bars, higher = history([(100, 101, 99, 100), (100, 105, 90, 100), (60, 70, 50, 60)])
-    result = simulate(request(fee_bps=0.0, slippage_bps=0.0), bars, higher, PRODUCT, OneSignal())
+    result = simulate(
+        request(candles=bars, fee_bps=0.0, slippage_bps=0.0), bars, higher, PRODUCT, OneSignal()
+    )
     assert result["trades"][0]["exits"][0]["price"] == 60
     assert result["summary"]["net_pnl"] == -160
 
 
 def test_fees_slippage_and_ending_equity_reconcile():
     bars, higher = history([(100, 101, 99, 100), (100, 105, 95, 103), (103, 106, 99, 104)])
-    result = simulate(request(fee_bps=10.0, slippage_bps=10.0), bars, higher, PRODUCT, OneSignal())
+    result = simulate(
+        request(candles=bars, fee_bps=10.0, slippage_bps=10.0), bars, higher, PRODUCT, OneSignal()
+    )
     trade = result["trades"][0]
     assert trade["entry"] == pytest.approx(100.1)
     assert trade["final_reason"] == "end_of_test"
@@ -127,7 +137,7 @@ def test_fees_slippage_and_ending_equity_reconcile():
 def test_zero_trades_are_valid_results():
     bars, higher = history([(100, 101, 99, 100)] * 5)
     result = simulate(
-        request(fee_bps=0.0, slippage_bps=0.0),
+        request(candles=bars, fee_bps=0.0, slippage_bps=0.0),
         bars,
         higher,
         PRODUCT,
@@ -140,7 +150,9 @@ def test_zero_trades_are_valid_results():
 
 def test_insufficient_funds_skip_trade_instead_of_leveraging_implicitly():
     bars, higher = history([(100, 101, 99, 100)] * 5)
-    options = request(fee_bps=0.0, slippage_bps=0.0).model_copy(update={"initial_balance": 100.0})
+    options = request(candles=bars, fee_bps=0.0, slippage_bps=0.0).model_copy(
+        update={"initial_balance": 100.0}
+    )
     result = simulate(options, bars, higher, PRODUCT, OneSignal())
     assert result["summary"]["trades"] == 0
     assert result["rejected_entries"] == {"insufficient_simulated_funds": 1}
@@ -192,5 +204,7 @@ def test_replay_break_even_stop_uses_the_exchange_tick():
             (105, 106, 103, 105),
         ]
     )
-    result = simulate(request(fee_bps=0.0, slippage_bps=3.0), bars, higher, PRODUCT, OneSignal())
+    result = simulate(
+        request(candles=bars, fee_bps=0.0, slippage_bps=3.0), bars, higher, PRODUCT, OneSignal()
+    )
     assert result["trades"][0]["stop_updates"][0]["stop"] == 100.0

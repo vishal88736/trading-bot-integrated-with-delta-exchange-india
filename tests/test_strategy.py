@@ -1,6 +1,6 @@
 import pytest
 
-from bot.indicators import atr, cmo, ema, windowed_average, windowed_atr
+from bot.indicators import atr, cmo, ema, windowed_atr, windowed_average
 from bot.models import Candle
 from bot.settings import Settings
 from strategies.trend_signals import TrendSignals

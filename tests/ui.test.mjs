@@ -197,7 +197,106 @@ test("parameter research submits a bounded grid without changing the runner", as
   });
   assert.equal(body.cache, "use");
   assert.equal(body.check_lookahead, true);
+  assert.equal(body.spread_bps, 0);
+  assert.deepEqual(body.cost_stress_bps, [5, 10, 20]);
   assert.equal(state.settings.fast_ema, 9);
+  assert.ok(
+    !calls.some((call) => ["/api/start", "/api/settings"].includes(call.url)),
+  );
+});
+
+test("costs, data coverage and independent replay have distinct result labels", async (t) => {
+  const { w, document: d } = await dashboard(t);
+  const result = researchResult();
+  result.request = { slippage_bps: 2 };
+  Object.assign(result.summary, {
+    fees: 5,
+    slippage_cost: 3,
+    spread_cost: 2,
+    before_cost_pnl: 20,
+  });
+  result.data_quality = {
+    coverage_percent: 100,
+    actual_candles: 300,
+    expected_candles: 300,
+    data_sha256: "ab".repeat(32),
+    scope: "Complete, ordered candles.",
+  };
+  result.cost_stress = {
+    status: "completed",
+    scope: "Same data and frozen selected rules.",
+    scenarios: [
+      {
+        slippage_bps: 10,
+        return_percent: -1,
+        max_drawdown_percent: 2,
+        trades: 10,
+        status: "completed",
+      },
+      {
+        slippage_bps: 50,
+        status: "skipped",
+        message: "Exceeds the configured entry execution limit",
+      },
+    ],
+  };
+  result.reference_checks = [
+    {
+      name: "Backtesting.py",
+      url: "https://github.com/kernc/backtesting.py",
+      kind: "strategy_replay",
+      status: "passed",
+      message: "Replayed 300 candles.",
+      scope: "Shares strategy signals and historical inputs.",
+    },
+  ];
+  w.setBacktestJob({ status: "completed", run_id: "cost-test", result });
+  assert.match(d.getElementById("research-costs").textContent, /Spread cost/);
+  assert.match(
+    d.getElementById("research-data-quality").textContent,
+    /100% coverage/,
+  );
+  assert.match(
+    d.getElementById("research-stress-results").textContent,
+    /-1.00%/,
+  );
+  assert.match(
+    d.getElementById("research-stress-results").textContent,
+    /Exceeds the configured/,
+  );
+  assert.match(
+    d.getElementById("bt-reference-checks").textContent,
+    /Broker replay agrees/,
+  );
+  assert.match(
+    d.getElementById("research-sample-note").textContent,
+    /Small sample/,
+  );
+  assert.equal(d.getElementById("research-inputs").disabled, false);
+  w.setBacktestJob({ status: "running", run_id: "next", message: "Running" });
+  assert.equal(d.getElementById("research-inputs").disabled, true);
+});
+
+test("spread and sensitivity controls stay isolated and enforce the entry limit", async (t) => {
+  const { w, document: d, calls } = await dashboard(t);
+  d.getElementById("backtest-spread").value = "60";
+  d.getElementById("backtest-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  await settle();
+  assert.match(d.getElementById("backtest-status").textContent, /half-spread/);
+  assert.ok(!calls.some((call) => call.url === "/api/backtests" && call.body));
+  d.getElementById("backtest-spread").value = "4";
+  d.getElementById("backtest-stress").value = "";
+  d.getElementById("backtest-form").dispatchEvent(
+    new w.Event("submit", { cancelable: true }),
+  );
+  await settle();
+  const body = calls.find(
+    (call) => call.url === "/api/backtests" && call.body,
+  )?.body;
+  assert.equal(body.spread_bps, 4);
+  assert.deepEqual(body.cost_stress_bps, []);
   assert.ok(
     !calls.some((call) => ["/api/start", "/api/settings"].includes(call.url)),
   );

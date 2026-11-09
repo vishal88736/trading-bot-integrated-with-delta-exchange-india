@@ -537,6 +537,7 @@ $("backtest-form").onsubmit = async (event) => {
     initial_balance: Number($("backtest-balance").value),
     fee_bps: Number($("backtest-fee").value),
     slippage_bps: Number($("backtest-slippage").value),
+    spread_bps: Number($("backtest-spread").value),
   };
   try {
     Object.assign(request, readResearchRequest());
@@ -579,9 +580,12 @@ $("backtest-form").onsubmit = async (event) => {
     );
     return;
   }
-  if (request.slippage_bps > settings.max_entry_slippage_bps) {
+  if (
+    request.slippage_bps + request.spread_bps / 2 >
+    settings.max_entry_slippage_bps
+  ) {
     showBacktestError(
-      "Test slippage exceeds the maximum entry slippage in Risk & targets.",
+      "Slippage plus half-spread exceeds the maximum entry slippage in Risk & targets.",
       $("backtest-slippage"),
     );
     return;
@@ -738,9 +742,11 @@ function renderBacktest(result) {
     const status = document.createElement("strong");
     status.textContent =
       check.status === "passed"
-        ? check.kind === "execution_scenarios"
-          ? "Bracket checks passed ✓"
-          : "Metrics agree ✓"
+        ? check.kind === "strategy_replay"
+          ? "Broker replay agrees ✓"
+          : check.kind === "execution_scenarios"
+            ? "Bracket checks passed ✓"
+            : "Metrics agree ✓"
         : check.status.replaceAll("_", " ");
     status.className = check.status === "passed" ? "positive" : "negative";
     const detail = document.createElement("p");

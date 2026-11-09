@@ -14,6 +14,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from bot.data_quality import inspect_data
 from bot.models import RESOLUTIONS
 from bot.research import Cancelled, ResearchOptions
 from bot.risk import entry_size, next_stop, trade_plan
@@ -33,6 +34,8 @@ class BacktestRequest(BaseModel):
     initial_balance: float = Field(default=10000.0, gt=0, le=1000000000)
     fee_bps: float = Field(default=5.0, ge=0, le=100)
     slippage_bps: float = Field(default=2.0, ge=0, le=500)
+    spread_bps: float = Field(default=0.0, ge=0, le=500)
+    cost_stress_bps: list[float] = Field(default_factory=lambda: [5.0, 10.0, 20.0], max_length=4)
     cache: Literal["use", "refresh", "off"] = "use"
     check_lookahead: bool = True
     lookahead_samples: int = Field(default=16, ge=4, le=64)
@@ -46,8 +49,12 @@ class BacktestRequest(BaseModel):
         bars = (self.end - self.start) // interval
         if bars < 2 or self.end - self.start > 366 * 86400:
             raise ValueError("Choose at least two candles and a range up to one year (366 days)")
-        if self.slippage_bps > self.settings.max_entry_slippage_bps:
-            raise ValueError("Test slippage exceeds the strategy's maximum entry slippage")
+        if self.slippage_bps + self.spread_bps / 2 > self.settings.max_entry_slippage_bps:
+            raise ValueError("Slippage plus half-spread exceeds the maximum entry slippage")
+        if any(not 0 <= value <= 500 for value in self.cost_stress_bps):
+            raise ValueError("Cost stress slippage must be between 0 and 500 basis points")
+        if len(set(self.cost_stress_bps)) != len(self.cost_stress_bps):
+            raise ValueError("Choose distinct cost stress scenarios")
         if set(self.research.grid) - parameter_keys(self.settings):
             raise ValueError("Parameter grid includes a field unused by the selected strategy")
         if self.research.kind == "walk_forward":
@@ -61,6 +68,7 @@ class BacktestRequest(BaseModel):
 
 
 def simulate(request, candles, higher, product, strategy=None, progress=None):
+    quality = inspect_data(request, candles, higher, product)
     settings = request.settings
     interval = RESOLUTIONS[settings.timeframe]
     hinterval = RESOLUTIONS[settings.higher_timeframe]
@@ -70,7 +78,9 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
     multiplier = float(product["contract_value"])
     quote = product["quoting_asset"]["symbol"]
     cash = request.initial_balance
-    fee_rate, slip = request.fee_bps / 10000, request.slippage_bps / 10000
+    fee_rate = request.fee_bps / 10000
+    slip_rate, spread_rate = request.slippage_bps / 10000, request.spread_bps / 20000
+    slip = slip_rate + spread_rate
     position, pending, trade = None, None, None
     pending_exit = None
     trades, curve, rejected = [], [], Counter()
@@ -99,14 +109,23 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
         fees += commission
         trade["net_pnl"] += pnl
         trade["fees"] += commission
+        trade["slippage_cost"] += reference * quantity * multiplier * slip_rate
+        trade["spread_cost"] += reference * quantity * multiplier * spread_rate
+        trade["before_cost_pnl"] += (
+            direction * (reference - trade["entry_reference"]) * quantity * multiplier
+        )
         position.remaining -= quantity
         trade["exits"].append(
             {
                 "time": timestamp,
                 "reason": reason,
                 "price": fill,
+                "reference_price": reference,
                 "quantity": quantity,
                 "net_pnl": pnl,
+                "fee": commission,
+                "slippage_cost": reference * quantity * multiplier * slip_rate,
+                "spread_cost": reference * quantity * multiplier * spread_rate,
             }
         )
         if not position.remaining:
@@ -153,6 +172,7 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
                     "signal_time": pending.time,
                     "entry_time": candle.time,
                     "entry": entry,
+                    "entry_reference": candle.open,
                     "atr": pending.atr,
                     "initial_stop": position.stop,
                     "targets": position.targets[:],
@@ -160,6 +180,9 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
                     "sizing": sizing,
                     "net_pnl": -entry_fee,
                     "fees": entry_fee,
+                    "slippage_cost": candle.open * quantity * multiplier * slip_rate,
+                    "spread_cost": candle.open * quantity * multiplier * spread_rate,
+                    "before_cost_pnl": 0.0,
                     "exits": [],
                     "stop_updates": [],
                     "reason": pending.reason,
@@ -284,6 +307,7 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
         "actual_end": candles[test_indices[-1]].time + interval,
         "candles": len(test_indices),
         "warmup_candles": first,
+        "data_quality": quality,
         "summary": {
             "initial_balance": request.initial_balance,
             "ending_equity": cash,
@@ -299,13 +323,17 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
             "gross_profit": profits,
             "gross_loss": losses,
             "fees": fees,
+            "slippage_cost": sum(t["slippage_cost"] for t in trades),
+            "spread_cost": sum(t["spread_cost"] for t in trades),
+            "before_cost_pnl": sum(t["before_cost_pnl"] for t in trades),
+            "total_costs": fees + sum(t["slippage_cost"] + t["spread_cost"] for t in trades),
         },
         "rejected_entries": dict(rejected),
         "ambiguous_candles": len(ambiguous_bars),
         "trades": trades,
         "equity_curve": curve,
         "assumptions": [
-            "Closed-candle signals; entries at the next candle open with adverse slippage.",
+            "Closed-candle signals; next-open entries with adverse slippage and half-spread.",
             "Enabled strategy exits execute at the next candle open after close confirmation.",
             "Risk sizing reserves stop distance and costs; gaps can exceed planned risk.",
             (
@@ -321,8 +349,9 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
                 "gaps through stops fill at the worse opening price."
             ),
             (
-                "Fees charged on every fill. Funding, tax, liquidation, "
-                "spread changes and order-book liquidity are excluded."
+                "All fills use the configured taker fee: the demo runner sends market orders. "
+                "Fixed spread is optional. Funding, tax, liquidation, variable spread and "
+                "order-book liquidity are excluded."
             ),
             (
                 "Drawdown is sampled at candle closes; "
@@ -336,6 +365,8 @@ def simulate(request, candles, higher, product, strategy=None, progress=None):
                 "History source and contract tick sizes are recorded in this report; "
                 "public market data is separate from the connected demo account."
             ),
+            "Profit factor uses net P&L of closed positions, including all partial fills and fees.",
+            "Before-cost P&L removes costs from this run's fills; it is not a zero-cost rerun.",
         ],
     }
     return result
@@ -353,6 +384,7 @@ class Backtests:
         self.cancel_event = threading.Event()
         self.run_id = uuid.uuid4().hex
         self.results = set()
+        self.last_inputs = None
         self.thread = None
         self.job = {
             "status": "idle",
@@ -373,6 +405,7 @@ class Backtests:
             self.cancel_event.clear()
             self.run_id = uuid.uuid4().hex
             self.results = set()
+            self.last_inputs = None
             self.job = {
                 "status": "running",
                 "message": (
@@ -402,12 +435,50 @@ class Backtests:
     def save_result(self, index, result):
         directory = self.artifact_root / self.run_id
         directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+        fingerprint = result.get("data_quality", {}).get("data_sha256")
+        if fingerprint and not result.get("walk_forward") and self.last_inputs:
+            identity, candles, higher, product = self.last_inputs
+            packet = directory / f"inputs-{fingerprint}.json.gz"
+            if identity == fingerprint and not packet.exists():
+                with gzip.open(packet, "wt", encoding="utf-8") as stream:
+                    json.dump(
+                        {
+                            "candles": [vars(c) for c in candles],
+                            "higher": [vars(c) for c in higher],
+                            "product": product,
+                        },
+                        stream,
+                        allow_nan=False,
+                        separators=(",", ":"),
+                    )
         path = directory / f"{index}.json.gz"
         temporary = path.with_suffix(".tmp")
         with gzip.open(temporary, "wt", encoding="utf-8") as stream:
             json.dump(result, stream, allow_nan=False, separators=(",", ":"))
         temporary.replace(path)
         self.results.add(index)
+
+    def remember_inputs(self, result, candles, higher, product):
+        self.last_inputs = (result["data_quality"]["data_sha256"], candles, higher, product)
+
+    def validation_inputs(self, result, study=None):
+        if result.get("walk_forward"):
+            return {
+                "folds": [
+                    {
+                        "result": self.read_result(row["id"]),
+                        "inputs": self.validation_inputs(self.read_result(row["id"])),
+                        "held_cash": row["status"] == "skipped",
+                    }
+                    for row in study["rows"]
+                ]
+            }
+        identity = result.get("data_quality", {}).get("data_sha256")
+        path = self.artifact_root / self.run_id / f"inputs-{identity}.json.gz"
+        if path.exists():
+            with gzip.open(path, "rt", encoding="utf-8") as stream:
+                return json.load(stream)
+        return None
 
     def read_result(self, index, run_id=None):
         if run_id is not None and run_id != self.run_id:
@@ -431,6 +502,20 @@ class Backtests:
                     quantstats_report(result, path)
             else:
                 path.write_text(html_report(result, study), encoding="utf-8")
+            return path
+
+    def input_report(self, index, run_id):
+        with self.lock:
+            if self.job["status"] != "completed":
+                raise DeltaError("Wait for the research run to complete before exporting inputs")
+            result = self.read_result(index, run_id)
+            inputs = self.validation_inputs(result, self.job.get("study"))
+            if inputs is None:
+                raise DeltaError("Exact inputs were not saved; run a new backtest")
+            path = self.artifact_root / self.run_id / f"{index}-inputs.json.gz"
+            if not path.exists():
+                with gzip.open(path, "wt", encoding="utf-8") as stream:
+                    json.dump(inputs, stream, allow_nan=False, separators=(",", ":"))
             return path
 
     def load_history(self, request, client):
@@ -486,6 +571,7 @@ class Backtests:
         from bot.strategy_checks import lookahead_check
 
         result = simulate(request, candles, higher, product, progress=self.progress)
+        self.remember_inputs(result, candles, higher, product)
         result["history"] = history
         result["analytics"] = analytics(result)
         result["lookahead_check"] = (
@@ -513,13 +599,18 @@ class Backtests:
                 )
                 result, study = run(self, request, client)
                 selected = study["selected_id"]
+            if result is not None:
+                # Save the exact inputs before validating a selected comparison row.
+                self.save_result(selected, result)
+                inputs = self.validation_inputs(result, study)
+                from bot.cost_checks import stress_costs
+
+                result["cost_stress"] = stress_costs(result, inputs, self.progress)
             if result is not None and self.reference_root is not None:
                 from bot.reference_checks import validate
 
-                self.progress(
-                    "Checking reference statistics and independent bracket execution scenarios"
-                )
-                result["reference_checks"] = validate(result, self.reference_root)
+                self.progress("Checking reference statistics and independent broker execution")
+                result["reference_checks"] = validate(result, self.reference_root, inputs=inputs)
             if result is not None:
                 self.save_result(selected, result)
             self.progress("Finishing research report")

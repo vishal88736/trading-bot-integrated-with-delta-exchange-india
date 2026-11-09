@@ -15,9 +15,9 @@ The bot takes partial profits and advances the remaining stop loss: **TP1 → en
 - **Sizing and exits:** optional planned-risk sizing (0.1–2%), direction controls, and strategy-specific exits alongside the ATR target/stop ladder.
 - **Settings preview:** live target reward/risk and partial contract sizes, keyboard navigation, and field-level validation feedback.
 - **Account information:** demo balances, available funds, margin, open positions, orders, and recent fills. Paper positions appear under Automation, while Account shows exchange data.
-- **Free backtesting:** up to one year, persistent candle caching, simulated costs, trade timelines, JSON and offline HTML reports.
+- **Free backtesting:** up to one year, validated candle coverage, caching, taker fees/slippage/spread, cost sensitivity, trade timelines, and offline reports.
 - **Research:** multi-coin comparison, parameter heatmaps, expanding walk-forward validation, daily risk metrics and sampled signal consistency checks.
-- **Reference checks:** two independent statistics implementations and 20 Backtrader broker execution scenarios.
+- **Reference checks:** two statistics readers, 20 Backtrader scenarios, and full-period Backtesting.py broker replay with a project execution adapter.
 
 ## Quick start
 
@@ -110,12 +110,12 @@ Open **[Backtest](http://127.0.0.1:8000/#backtest)** and:
 1. Enter a market symbol and choose the entry strategy, signal timeframe, and higher timeframe.
 2. Choose a date preset or custom dates. Dates use your local timezone; the maximum interval is 366 days.
 3. Select **Delta India public market** or **Delta demo market** as the history source.
-4. Set starting capital. Open **Strategy settings** for indicators, risk/targets, fees, and slippage. Backtest settings are independent of the running bot.
+4. Set starting capital. Open **Strategy settings** for indicators, risk/targets, taker fees, slippage, spread, and cost sensitivity. Backtest settings are independent of the running bot.
 5. Select **Run backtest**. The form shows starting/replay feedback and prevents duplicate submissions.
 
 Choose **Test type** for a single replay, coin comparison, parameter comparison, or walk-forward validation. Research runs have progress and a separate **Cancel research** control. Their inputs never save or start the trading runner.
 
-Results have **Overview**, **Trades**, and **Methodology** tabs. Open **View trade** for partial fills and stop updates. **JSON results** includes the selected run's settings, full ledger/equity curve, assumptions, reference checks, and study metadata. **HTML report** downloads a self-contained report with no external resources. Optional **QuantStats** export uses locally calculated daily returns.
+Results have **Overview**, **Trades**, and **Methodology** tabs. Open **View trade** for partial fills and stop updates. **JSON results** includes settings, ledger/equity, costs, data/code fingerprints, checks, and study metadata. **Replay inputs** downloads the exact OHLCV and contract metadata as compressed JSON, including selected test folds for walk-forward runs. **HTML report** is self-contained; optional **QuantStats** export uses local daily returns. See the [backtesting guide](docs/backtesting.md) for assumptions, reproduction, and validation scope.
 
 See the [research guide](docs/research.md) for all modes, metrics, limits, and API examples.
 
@@ -135,7 +135,9 @@ A 365-day test at five-minute resolution contains **105,120 test candles**. A fu
 
 Signals are evaluated at candle close; entries fill at the next candle open with adverse slippage. Only higher-timeframe candles already closed at the signal time are available to the strategy. Indicator calculation matches the runner's rolling 600-candle window.
 
-The replay applies contract values, tick rounding, partial allocations, fees on every fill, slippage, position/notional limits, simulated funds, and the realized-loss limit. Remaining positions close at the end. Zero trades is a valid result.
+The replay applies contract values, tick rounding, partial allocations, taker fees on every fill, adverse slippage, half the configured spread on each fill, position/notional limits, simulated funds, and the realized-loss limit. Targets also use taker fees because the runner sends market exits. Remaining positions close at the end. Zero trades is a valid result.
+
+Cost attribution reconciles **before-cost P&L − fees − slippage − spread = net P&L** for these fills. The sensitivity table reruns the selected rules at 5/10/20 bps slippage by default, without downloading more candles or changing parameters. Scenarios above the configured execution limit are skipped. Walk-forward scenarios preserve the original training selections and carry their own capital between test folds.
 
 OHLC candles do not reveal intrabar price order. The simulator gives the stop priority when both stop and target are touched. An advanced stop can close the remainder in the same candle as a partial target. Methodology reports this conservative policy. Funding, taxes, liquidation, order-book liquidity, and spread changes are not modeled. Historical fills differ from the runner's polled market exits.
 
@@ -146,12 +148,15 @@ OHLC candles do not reveal intrabar price order. The simulator gives the stop pr
 | [PyBacktestPro](https://github.com/raviwijerathna1/PyBacktestPro)                                               | Drawdown, trades, win rate, ledger P&L, fees                                                                | Recalculates statistics from this engine's ledger/equity        |
 | [Trading strategy backtesting suite](https://github.com/Trading-Backtesting/trading-strategy-backtesting-suite) | Ending equity, return, drawdown, trades, win rate                                                           | Recalculates statistics from this engine's ledger/equity        |
 | [Backtrader](https://github.com/mementum/backtrader)                                                            | 20 long/short scenarios: partial exits, stop advances, gaps, costs, rounding, protective-order cancellation | Independently executes controlled OHLC paths with fixed signals |
+| [Backtesting.py](https://github.com/kernc/backtesting.py) | Selected-period ledger, every equity sample, ending cash, fees, drawdown, risk sizing, native exits | Its broker handles orders and accounting; the project adapter implements Delta units and conservative OHLC exits. Strategy signals are shared. |
 
 The statistics checks do not independently execute strategy orders. Backtrader uses its own unmodified simulated broker and independently constructs levels and allocations. Fault-injection tests verify detection of broken dashboard stop moves and partial sizes.
 
 Backtrader's scenarios **do not replay your indicators or the full historical period**. Target scenarios use zero slippage to make limit-order fills comparable. Entry-candle exit activation, multiple targets/newly advanced stops in one candle, account risk-limit rules, and live exchange behavior are outside that comparison. Expand **Methodology → Validation checks → What this check covers** for details.
 
-Install all three pinned references and the optional statistics dependencies:
+Backtesting.py replays raw inputs rather than consuming this engine's fills. It independently constructs rounded levels, allocations and risk quantities. It uses the reviewed upstream broker's order acceptance, commission, reductions and equity accounting. Its adapter defines same-candle event priority, gap handling and market-exit impact. It shares the strategy implementation and does not independently verify indicators or tick-level price paths. Bankrupt scenarios are reported as not comparable because the engines have different bankruptcy/liquidation semantics.
+
+Install all four pinned references and the optional research dependencies:
 
 ```bash
 uv sync --frozen --group research
@@ -162,7 +167,7 @@ uv run --frozen --group research delta-bot
 Recheck an exported report:
 
 ```bash
-uv run --frozen --group research python scripts/check_backtest_references.py /path/to/backtest.json
+uv run --frozen --group research python scripts/check_backtest_references.py /path/to/backtest.json --inputs /path/to/delta-backtest-0-inputs.json.gz
 ```
 
 Run only Backtrader, without fetching market data or installing the statistics libraries:
@@ -286,5 +291,8 @@ The legacy market maker, random quotes, automatic margin top-ups, tracked accoun
 | PyBacktestPro                      | `cf276f47ea664a91b1579d41a0ca5e5a59a8239e` |
 | Trading strategy backtesting suite | `ceaceb1858d22de9a51c0e19f568961cc4195160` |
 | Backtrader 1.9.78.123              | `b853d7c90b6721476eb5a5ea3135224e33db1f14` |
+| Backtesting.py                     | `ca2e2611621e472542ba90f7243a1fa06a7d7108` |
 
-Reference source is downloaded separately and is not bundled or redistributed here. Backtrader carries GPL-3.0; the suite contains components with differing upstream licenses; PyBacktestPro has no license file at its reviewed revision. The imported Delta sample also has no LICENSE file at the imported revision. Attribution does not grant additional rights to those sources.
+Reference source is downloaded separately and is not bundled or redistributed here. Backtrader carries GPL-3.0 and Backtesting.py AGPL-3.0; the suite contains components with differing upstream licenses; PyBacktestPro has no license file at its reviewed revision. The imported Delta sample also has no LICENSE file at the imported revision. Attribution does not grant additional rights to those sources.
+
+[Crypto-Back-Tester](https://github.com/shoaibghulam/Crypto-Back-Tester) was reviewed at `2e7e853371530c0ed368e12bd094aefd4bc7bfc4` for explicit costs, position sizing and frontend organization. Its README describes an MVP and its repository includes an MIT license. Its engine was not copied or installed as a second application; it is not an independent validator here.

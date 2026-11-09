@@ -1,6 +1,7 @@
 """Recheck exported statistics or run the independent Backtrader broker scenarios."""
 
 import argparse
+import gzip
 import json
 from pathlib import Path
 
@@ -12,11 +13,19 @@ def main():
     parser.add_argument("result", type=Path, nargs="?")
     parser.add_argument("--runtime", type=Path, default=Path(".runtime"))
     parser.add_argument("--only", nargs="+", choices=[name for name, _, _ in REFERENCES])
+    parser.add_argument("--inputs", type=Path, help="Exact inputs exported as JSON or JSON.gz")
     args = parser.parse_args()
     if args.result is None and args.only != ["Backtrader"]:
         parser.error("An exported result is required for the statistics checks")
     result = json.loads(args.result.read_text()) if args.result else {}
-    report = validate(result, args.runtime / "references", only=args.only)
+    inputs = None
+    if args.inputs:
+        if args.inputs.suffix == ".gz":
+            with gzip.open(args.inputs, "rt", encoding="utf-8") as stream:
+                inputs = json.load(stream)
+        else:
+            inputs = json.loads(args.inputs.read_text())
+    report = validate(result, args.runtime / "references", only=args.only, inputs=inputs)
     print(json.dumps(report, indent=2, allow_nan=False))
     if any(check["status"] != "passed" for check in report):
         raise SystemExit(1)
